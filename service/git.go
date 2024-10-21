@@ -7,41 +7,43 @@ import (
 	"strings"
 
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/config"
+	gitConfig "github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/go-git/go-git/v5/storage/memory"
 	"github.com/philipp-mlr/al-id-maestro/model"
 )
 
-func getRemoteBranches(repository *model.Repository) ([]model.Branch, error) {
+func getRemoteBranches(config *model.RemoteConfiguration) ([]model.Branch, error) {
 	branches := []model.Branch{}
 
 	remote := git.NewRemote(
 		memory.NewStorage(),
-		&config.RemoteConfig{
-			Name: repository.RemoteName,
-			URLs: []string{repository.URL},
+		&gitConfig.RemoteConfig{
+			Name: config.RemoteName,
+			URLs: []string{config.RepositoryURL},
 		})
 
 	rfs, err := remote.List(&git.ListOptions{
 		Auth: &http.BasicAuth{
-			Username: repository.Name,
-			Password: repository.AuthToken,
+			Username: config.RemoteName,
+			Password: config.GithubAuthToken,
 		},
 	})
+
 	if err != nil {
 		return nil, err
 	}
 
 	for _, rf := range rfs {
 		if rf.Name().IsRemote() || rf.Name().IsBranch() {
-			if !IsExcludeBranch(rf.Name().Short(), repository.ExcludeBranches) {
-				branches = append(branches, model.Branch{
-					Name:           rf.Name().Short(),
-					RepositoryName: repository.Name,
-					LastCommit:     rf.Hash().String(),
-				})
+			if !isExcludeBranch(rf.Name().Short(), config.ExcludeBranches) {
+				branches = append(branches,
+					model.Branch{
+						Name:           rf.Name().Short(),
+						RepositoryName: config.RepositoryName,
+						CommitID:       rf.Hash().String(),
+					})
 			}
 		}
 	}
@@ -49,7 +51,7 @@ func getRemoteBranches(repository *model.Repository) ([]model.Branch, error) {
 	return branches, nil
 }
 
-func IsExcludeBranch(branch string, excludeBranches []string) bool {
+func isExcludeBranch(branch string, excludeBranches []string) bool {
 	for _, excludeBranch := range excludeBranches {
 		if strings.Contains(branch, excludeBranch) {
 			return true
@@ -86,7 +88,7 @@ func cloneOrOpenRepo(authToken string, url string, path string) (*git.Repository
 	return repo, nil
 }
 
-func checkoutBranch(repo *git.Repository, authToken string, branchName string) error {
+func checkoutBranch(repo *git.Repository, authContext http.BasicAuth, branchName string, remoteName string) error {
 	branchRefName := plumbing.NewBranchReferenceName(branchName)
 	branchCoOpts := git.CheckoutOptions{
 		Branch: plumbing.ReferenceName(branchRefName),
@@ -99,47 +101,66 @@ func checkoutBranch(repo *git.Repository, authToken string, branchName string) e
 	}
 
 	err = wt.Checkout(&branchCoOpts)
+	if err == nil {
+		return nil
+	}
 
+	log.Println("Branch not found locally, trying to fetch...")
+
+	mirrorRemoteBranchRefSpec := fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)
+	err = fetch(repo, mirrorRemoteBranchRefSpec, authContext, remoteName)
 	if err != nil {
-		log.Println(err)
+		return err
+	}
 
-		mirrorRemoteBranchRefSpec := fmt.Sprintf("refs/heads/%s:refs/heads/%s", branchName, branchName)
-		err = fetchOrigin(repo, mirrorRemoteBranchRefSpec, &http.BasicAuth{
-			Username: "token",
-			Password: authToken,
-		})
-		if err != nil {
-			return err
-		}
+	err = wt.Checkout(&branchCoOpts)
+	if err != nil {
+		return err
+	}
 
-		err = wt.Checkout(&branchCoOpts)
-		if err != nil {
-			return err
+	return nil
+}
+
+func fetch(repo *git.Repository, refSpecStr string, authContext http.BasicAuth, remoteName string) error {
+	remote, err := repo.Remote(remoteName)
+	if err != nil {
+		return err
+	}
+
+	var refSpecs []gitConfig.RefSpec
+	if refSpecStr != "" {
+		refSpecs = []gitConfig.RefSpec{gitConfig.RefSpec(refSpecStr)}
+	}
+
+	if err = remote.Fetch(&git.FetchOptions{RefSpecs: refSpecs, Auth: &authContext}); err != nil {
+		if err == git.NoErrAlreadyUpToDate {
+			log.Print("refs already up to date")
+		} else {
+			return fmt.Errorf("fetch failed: %v", err)
 		}
 	}
 
 	return nil
 }
 
-func fetchOrigin(repo *git.Repository, refSpecStr string, authContext *http.BasicAuth) error {
-	remote, err := repo.Remote("origin")
+func pull(repo *git.Repository, authContext http.BasicAuth, remoteName string, branchName string) error {
+	w, err := repo.Worktree()
 	if err != nil {
 		return err
 	}
 
-	var refSpecs []config.RefSpec
-	if refSpecStr != "" {
-		refSpecs = []config.RefSpec{config.RefSpec(refSpecStr)}
-	}
-
-	if err = remote.Fetch(&git.FetchOptions{
-		RefSpecs: refSpecs,
-		Auth:     authContext,
-	}); err != nil {
+	err = w.Pull(&git.PullOptions{
+		RemoteName:    remoteName,
+		Force:         true,
+		Auth:          &authContext,
+		SingleBranch:  true,
+		ReferenceName: plumbing.NewBranchReferenceName(branchName),
+	})
+	if err != nil {
 		if err == git.NoErrAlreadyUpToDate {
-			log.Print("refs already up to date")
+			log.Print("Branch already up to date")
 		} else {
-			return fmt.Errorf("fetch origin failed: %v", err)
+			return err
 		}
 	}
 

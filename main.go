@@ -1,56 +1,40 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/philipp-mlr/al-id-maestro/handler"
-	"github.com/philipp-mlr/al-id-maestro/model"
 	"github.com/philipp-mlr/al-id-maestro/service"
-	"gorm.io/gorm"
 )
 
 func main() {
-	config := model.NewConfig()
-	err := config.Load()
+	db, err := service.InitDB("al-id-maestro")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	db := model.NewDB("database.db", &gorm.Config{})
-	err = db.Connect()
+	config, err := service.NewConfig(db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.Migrate()
+	allowedList, err := service.NewAllowList(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = db.Save(config.Repositories)
+	// err = service.Scan(db, config)
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	err = service.UpdateClaimed(db)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	objects := new(model.Objects)
-
-	for _, repo := range config.Repositories {
-		log.Println("Scanning repository ", repo.URL)
-		err = service.ScanRepository(&repo, db, objects)
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-
-		fmt.Println("Total objects found:", objects.Len())
-	}
-
-	// log.Println("Reading licensed objects from CSV file")
-	// lic := service.ReadLicensedObjectsCSV("./ids.csv")
 
 	// Echo instance
 	e := echo.New()
@@ -64,15 +48,44 @@ func main() {
 	e.Validator = &handler.CustomValidator{Validator: validator.New(validator.WithRequiredStructEnabled())}
 	e.Static("/static", "./public")
 
-	indexHandler := handler.IndexHanlder{}
+	indexHandler := handler.IndexHandler{
+		DB: db,
+	}
 	e.GET("/", indexHandler.HandleIndexShow)
 
 	claimHandler := handler.ClaimHandler{
+		DB:          db,
+		AllowedList: allowedList,
+	}
+	e.GET("/claim", claimHandler.HandlePageShow)
+
+	historyHandler := handler.HistoryHandler{
 		DB: db,
 	}
-	e.GET("/claim", claimHandler.HandleClaimShow)
-	e.POST("/claim/query-type", claimHandler.HandleClaimTypeQuery)
-	e.POST("/claim/request-claim", claimHandler.HandleIDClaim)
+	e.GET("/history", historyHandler.HandleHistoryShow)
+	e.POST("/history", historyHandler.HandlePostQuery)
+
+	duplicatesHandler := handler.DuplicatesHandler{
+		DB: db,
+	}
+	e.GET("/duplicates", duplicatesHandler.HandleDuplicatesShow)
+
+	remoteHandler := handler.RemoteHandler{
+		DB: db,
+	}
+	e.GET("/remote", remoteHandler.HandleRemoteShow)
+
+	usedHandler := handler.UsedHandler{
+		DB: db,
+	}
+	e.GET("/used", usedHandler.HandleUsedShow)
+
+	aboutHandler := handler.AboutHandler{}
+	e.GET("/about", aboutHandler.HandleAboutShow)
+
+	e.POST("/claim/query-type", claimHandler.HandleObjectTypeQuery)
+
+	e.POST("/claim/request-id", claimHandler.HandleRequestID)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":1323"))

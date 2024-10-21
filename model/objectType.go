@@ -1,82 +1,76 @@
 package model
 
-import "fmt"
+import "strings"
+
+type ObjectType string
 
 const (
-	Table            int = 1
-	Report           int = 3
-	Codeunit         int = 5
-	Xmlport          int = 6
-	Page             int = 8
-	Query            int = 9
-	Enum             int = 16
-	PageExt          int = 14
-	TableExt         int = 15
-	ReportExt        int = 22
-	EnumExt          int = 17
-	PermissionSet    int = 20
-	PermisisonSetExt int = 21
+	Table                  ObjectType = "Table"
+	TableExtention         ObjectType = "TableExtension"
+	Page                   ObjectType = "Page"
+	PageExtention          ObjectType = "PageExtension"
+	Report                 ObjectType = "Report"
+	ReportExtention        ObjectType = "ReportExtension"
+	Enum                   ObjectType = "Enum"
+	EnumExtention          ObjectType = "EnumExtension"
+	PermissionSet          ObjectType = "PermissionSet"
+	PermisisonSetExtention ObjectType = "PermissionSetExtension"
+	Codeunit               ObjectType = "Codeunit"
+	XMLPort                ObjectType = "XMLPort"
+	Query                  ObjectType = "Query"
+	MenuSuite              ObjectType = "MenuSuite"
 )
 
-type ObjectType struct {
-	ID   uint `gorm:"primarykey" json:"id"`
-	Name string
-}
-
-type ObjectTypeQuery struct {
-	Query string `json:"query" validate:"required"`
-}
-
-func (o ObjectTypeQuery) GetResults(db *DB) ([]ObjectType, error) {
-	if db == nil {
-		return nil, fmt.Errorf("DB is nil")
-	}
-
-	objectTypes := []ObjectType{}
-
-	tx := db.Database.Where("name LIKE ?", "%"+o.Query+"%").Find(&objectTypes)
-	if tx.Error != nil {
-		return nil, tx.Error
-	}
-
-	return objectTypes, nil
-}
-
-func NewObjectType(name string) *ObjectType {
-	return &ObjectType{
-		Name: name,
-		ID:   uint(MapNameToInt(name)),
-	}
-}
-
-func MapNameToInt(name string) int {
-	switch name {
-	case "table":
+func MapObjectType(objectType string) ObjectType {
+	switch strings.ToLower(objectType) {
+	case strings.ToLower(string(Table)):
 		return Table
-	case "report":
-		return Report
-	case "codeunit":
-		return Codeunit
-	case "xmlport":
-		return Xmlport
-	case "page":
+	case strings.ToLower(string(TableExtention)):
+		return TableExtention
+	case strings.ToLower(string(Page)):
 		return Page
-	case "query":
-		return Query
-	case "enum":
+	case strings.ToLower(string(PageExtention)):
+		return PageExtention
+	case strings.ToLower(string(Report)):
+		return Report
+	case strings.ToLower(string(ReportExtention)):
+		return ReportExtention
+	case strings.ToLower(string(Enum)):
 		return Enum
-	case "pageextension":
-		return PageExt
-	case "tableextension":
-		return TableExt
-	case "reportextension":
-		return ReportExt
-	case "enumextension":
-		return EnumExt
-	case "permissionset":
+	case strings.ToLower(string(EnumExtention)):
+		return EnumExtention
+	case strings.ToLower(string(PermissionSet)):
 		return PermissionSet
-	case "permissionsetextension":
-		return PermisisonSetExt
+	case strings.ToLower(string(PermisisonSetExtention)):
+		return PermisisonSetExtention
+	case strings.ToLower(string(Codeunit)):
+		return Codeunit
+	case strings.ToLower(string(XMLPort)):
+		return XMLPort
+	case strings.ToLower(string(Query)):
+		return Query
+	case strings.ToLower(string(MenuSuite)):
+		return MenuSuite
+	default:
+		return ""
 	}
-	return 0
+}
+
+func GetObjectTypes() []ObjectType {
+	return []ObjectType{
+		Table,
+		TableExtention,
+		Page,
+		PageExtention,
+		Report,
+		ReportExtention,
+		Enum,
+		EnumExtention,
+		PermissionSet,
+		PermisisonSetExtention,
+		Codeunit,
+		XMLPort,
+		Query,
+		MenuSuite,
+	}
 }

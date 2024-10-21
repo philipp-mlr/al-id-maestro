@@ -5,8 +5,8 @@ import (
 	"github.com/philipp-mlr/al-id-maestro/model"
 )
 
-templ Show() {
-	@layout.Base() {
+templ Show(currPage map[string]bool) {
+	@layout.Base(currPage, "AL ID Maestro - Claim ID") {
 		<div class="flex items-center justify-center h-screen">
 			<div class="relative px-48 py-16 text-center rounded-lg no-shrink min-w-80 bg-base-200">
 				<h1 class="mb-4 text-4xl font-bold">Claim ID</h1>
@@ -16,16 +16,18 @@ templ Show() {
 					</p>
 					<div id="newID" class="inline-flex items-center justify-left"></div>
 				</div>
-				<div class="flex items-center justify-center mb-16 space-x-20">
+				<div class="flex items-center justify-center mb-16 space-x-20" hx-post="/claim/query-type" hx-trigger="load" hx-target="#search-results">
 					<div id="dropdown" class="dropdown dropdown-bottom">
-						<input id="dropdownInput" hx-ext="json-enc" hx-post="/claim/query-type" hx-trigger="input load, changed, click delay:200ms, search" hx-target="#search-results" name="query" type="query" tabindex="0" role="button" type="text" placeholder="Object type" class="w-64 max-w-xs input input-bordered"/>
+						<input id="dropdownInput" hx-ext="json-enc" hx-post="/claim/query-type" hx-trigger="keyup changed delay:100ms" hx-target="#search-results" name="query" type="query" tabindex="0" role="button" type="text" placeholder="Object type" class="w-64 max-w-xs input input-bordered"/>
 						<ul id="dropdownMenu" tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
 							<div id="search-results"></div>
 						</ul>
 					</div>
-					<button hx-post="/claim/request-claim" hx-include="#dropdownInput" hx-target="#newID" class="w-32 text-xl font-bold btn btn-primary">Go</button>
+					<button hx-ext="json-enc" hx-post="/claim/request-id" hx-include="#dropdownInput" hx-target="#newID" class="w-32 text-xl font-bold btn btn-primary">Go</button>
 				</div>
-				<button class="btn btn-neutral btn-wide">History</button>
+
+				<a href="/history" class="btn btn-neutral btn-wide">History</a>
+				
 				<div class="absolute top-2 right-2">
 					<div class="relative group">
 						<svg class="w-auto h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -78,12 +80,18 @@ templ Show() {
                 dropdownMenu.classList.remove("hidden");
             });
             
+			function setInputValueOnEnter() {
+				if (event.key === "Enter") {
+					setInputValue();
+				}
+			}
+
         </script>
 	}
 }
 
 templ ClaimedID(id string) {
-	<div class="inline-flex items-center">
+	<div class="inline-flex items-center hover:cursor-pointer">
 		<div id="objectID" class="text-3xl font-bold min-w-10">{ id }</div>
 		<svg id="copyToClipboardIcon" onclick="CopyToClipboard()" class="w-auto h-6 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
 			<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"></path>
@@ -94,8 +102,8 @@ templ ClaimedID(id string) {
 	</div>
 }
 
-templ Result(objectTypes []model.ObjectType) {
-	for _, objectType := range objectTypes {
-		<li tabindex="0"><a onclick="setInputValue(this)">{ objectType.Name }</a></li>
+templ QueryResults(results []model.ObjectType) {
+	for _, r := range results {
+		<li ><a tabindex="0" onclick="setInputValue(this)" onkeydown="setInputValueOnEnter(this)">{ string(r) }</a></li>
 	}
 }

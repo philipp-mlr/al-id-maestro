@@ -1,0 +1,14 @@
+<div class=\"px-20\"><h1 class=\"my-20 text-4xl\">Claim History</h1><div class=\"flex items-end gap-x-3\" hx-post=\"/history\" hx-trigger=\"change from:select, keyup from:input delay:200ms\" hx-target=\"#table-items\" hx-ext=\"json-enc\" hx-include=\"this\"><label class=\"w-full max-w-36 form-control\"><div class=\"label\"><span class=\"label-text\">Filter</span></div><select name=\"filter\" id=\"filter-select\" class=\"select select-bordered\"><option>ID</option> <option>Type</option> <option>Expired</option> <option>In Git</option> <option>Created At</option></select></label> <input name=\"query\" type=\"text\" placeholder=\"Type here\" class=\"w-full max-w-xs input input-bordered\"></div><div class=\"mt-5 overflow-x-auto\" hx-trigger=\"load\" hx-get=\"/history?page=1\" hx-target=\"#table-items\" hx-trigger=\"once\"><table class=\"table table-sm md:table-md xl:table-lg table-zebra\"><!-- head --><thead><tr><th>ID</th><th>Type</th><th>Expired</th><th>In Git</th><th>Created At</th></tr></thead> <tbody id=\"table-items\"></tbody></table></div></div>
+<tr><td>
+</td><td>
+</td><td>
+</td><td>
+</td><td>
+</td></tr>
+<tr hx-get=\"
+\" hx-trigger=\"revealed\" hx-swap=\"afterend show:none\" hx-target=\"this\"><td>
+</td><td>
+</td><td>
+</td><td>
+</td><td>
+</td></tr>

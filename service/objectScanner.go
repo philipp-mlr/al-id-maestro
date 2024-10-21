@@ -7,67 +7,77 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
-	"time"
 
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/jmoiron/sqlx"
+	"github.com/mattn/go-sqlite3"
 	"github.com/philipp-mlr/al-id-maestro/model"
-	"gorm.io/gorm"
 )
 
-func ScanRepository(repository *model.Repository, db *model.DB, objects *model.Objects) error {
-	log.Println("Processing repository", repository.Name)
-	log.Println("Getting remote branches")
+func Scan(db *sqlx.DB, config *model.Config) error {
+	for _, config := range config.RemoteConfiguration {
+		log.Println("Scanning repository ", config.RepositoryURL)
+		err := scanRepository(&config, db)
+		if err != nil {
+			return err
+		}
+	}
 
-	branches, err := getRemoteBranches(repository)
+	return nil
+}
+
+func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
+	branches, err := getRemoteBranches(config)
 	if err != nil {
 		return err
 	}
 
-	db.Database.Find(&repository.Branches, model.Branch{RepositoryName: repository.Name})
+	deleteRemovedBranches(db, branches, config.RepositoryName)
 
 	log.Println("Cloning or opening repo...")
 
-	path := buildRepoPath(repository.URL)
+	path := buildRepoPath(config.RepositoryURL)
 
-	repo, err := cloneOrOpenRepo(repository.AuthToken, repository.URL, path)
+	repo, err := cloneOrOpenRepo(config.GithubAuthToken, config.RepositoryURL, path)
 	if err != nil {
 		return err
 	}
 
 	for _, branch := range branches {
+		// needs refactoring
 		log.Println("Processing branch", branch.Name)
 
-		update := false
-		for _, b := range repository.Branches {
-			if b.RepositoryName == branch.RepositoryName && b.Name == branch.Name && b.LastCommit != branch.LastCommit {
-				update = true
-				break
-			}
-		}
+		commitID := getLastCommitID(db, branch.Name, config.RepositoryName)
+
+		update := commitID == "" || commitID != branch.CommitID
 
 		if !update {
 			log.Printf("Branch %v is up to date", branch.Name)
-		} else {
-			err := checkoutBranch(repo, repository.AuthToken, branch.Name)
-			if err != nil {
-				return err
-			}
-
-			err = traverseRepo(db, path, objects, branch)
-			if err != nil {
-				return err
-			}
+			continue
 		}
 
-		branch.LastScan = time.Now()
-		db.Save(branch)
-	}
+		authContext := http.BasicAuth{
+			Username: "token",
+			Password: config.GithubAuthToken,
+		}
 
-	repository.LastScan = time.Now()
-	db.Save(repository)
-	db.Save(branches)
+		err = checkoutBranch(repo, authContext, branch.Name, config.RemoteName)
+		if err != nil {
+			return err
+		}
+
+		err = pull(repo, authContext, config.RemoteName, branch.Name)
+		if err != nil {
+			return err
+		}
+
+		err = traverseRepo(db, path, branch.Name, config.RepositoryName, branch.CommitID)
+		if err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -80,27 +90,19 @@ func buildRepoPath(url string) string {
 	return path
 }
 
-func traverseRepo(db *model.DB, dir string, objects *model.Objects, branch model.Branch) error {
+func traverseRepo(db *sqlx.DB, dir string, branch string, repository string, commitID string) error {
 	total := new(int)
 	*total = 0
 
-	// TODO: Delete all objects from the current branch
-	// TODO: Read from db
-	queryObject := new(model.Object)
-	tx := db.Database.First(queryObject, model.Object{App: model.App{Branch: branch}})
-
-	fillInitial := tx.Error == gorm.ErrRecordNotFound
-
-	var appData []model.App
-	appData, err := readApp(dir, branch)
+	appData, err := getAppJsonFiles(dir)
 	if err != nil {
 		return err
 	}
-	db.Save(appData)
 
-	log.Printf("Found %v apps in branch %v ", len(appData), branch.Name)
+	log.Printf("Found %v apps in branch %v ", len(appData), branch)
 
 	for _, app := range appData {
+		deleteFoundObjects(db, app.ID, branch, repository)
 		log.Println("Checking app: ", app.Name)
 		err = filepath.Walk(app.BasePath, func(path string, info os.FileInfo, err error) error {
 
@@ -110,7 +112,7 @@ func traverseRepo(db *model.DB, dir string, objects *model.Objects, branch model
 
 			// Check if the file has a ".al" extension
 			if !info.IsDir() && filepath.Ext(info.Name()) == ".al" {
-				if err := addMatchesAndSort(db, path, total, objects, fillInitial, app); err != nil {
+				if err := findAndInsertMatches(db, path, total, app.ID, app.Name, branch, repository, commitID); err != nil {
 					return err
 				}
 			}
@@ -125,44 +127,36 @@ func traverseRepo(db *model.DB, dir string, objects *model.Objects, branch model
 
 	log.Println("Total objects found: ", *total)
 
-	if fillInitial {
-		sort.Sort(objects)
-	}
-
 	return nil
 }
 
-func readApp(dir string, branch model.Branch) ([]model.App, error) {
-	appData := []model.App{}
+func getAppJsonFiles(dir string) ([]model.AppJsonFile, error) {
+	apps := []model.AppJsonFile{}
 
 	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Check if the file has a ".al" extension
 		if !info.IsDir() && info.Name() == "app.json" {
 			content, err := os.ReadFile(path)
 			if err != nil {
 				return err
 			}
 
-			var app model.App
+			app := model.AppJsonFile{}
+
 			err = json.Unmarshal(content, &app)
 			if err != nil {
 				return err
 			}
 
-			app.Branch = branch
-
-			//appInfo.BasePath = path
 			p := strings.Replace(path, "app.json", "", 1)
 			p = strings.ReplaceAll(p, "\\", "/")
 			p = "./" + p
 			app.BasePath = p
 
-			appData = append(appData, app)
-
+			apps = append(apps, app)
 		}
 		return nil
 	})
@@ -171,10 +165,10 @@ func readApp(dir string, branch model.Branch) ([]model.App, error) {
 		return nil, err
 	}
 
-	return appData, nil
+	return apps, nil
 }
 
-func addMatchesAndSort(db *model.DB, filePath string, total *int, objects *model.Objects, fillInitial bool, app model.App) error {
+func findAndInsertMatches(db *sqlx.DB, filePath string, total *int, appId string, appName string, branch string, repository string, commitID string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
@@ -190,28 +184,22 @@ func addMatchesAndSort(db *model.DB, filePath string, total *int, objects *model
 		if len(matches) == 4 {
 			// matches[0] is the full match, matches[1], matches[2], matches[3] are the capture groups
 
-			objectType := strings.ToLower(matches[1])
-			objectName := strings.ToLower(matches[3])
+			objectType := matches[1]
+			objectName := matches[3]
 			id, err := strconv.Atoi(matches[2])
 			if err != nil {
 				log.Println("Error converting ID to int for file", filePath)
 				continue
 			}
 
-			newObjType := model.NewObjectType(objectType)
-			newObj := *model.NewAlObject(uint(id), *newObjType, objectName, app)
+			foundObject := *model.NewFoundObject(uint(id), model.MapObjectType(objectType), objectName, appId, appName, branch, repository, filePath, commitID)
 
-			if fillInitial {
-				objects.Objects = append(objects.Objects, newObj)
-				db.Save(&newObj)
-			} else {
-				index := objects.BinarySearch(newObj)
-				if index == -1 {
-					objects.Objects = append(objects.Objects, newObj)
-					db.Save(&newObj)
-					sort.Sort(objects)
-					log.Printf("Found new object: ID: %d, Type: %s, Name: %s\n", id, objectType, objectName)
-				}
+			err = insertFoundObject(db, foundObject)
+
+			if err == sqlite3.ErrConstraintUnique {
+				log.Printf("Object %v already exists in the database", foundObject.Name)
+			} else if err != nil {
+				return err
 			}
 
 			*total = *total + 1

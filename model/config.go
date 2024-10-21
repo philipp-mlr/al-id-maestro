@@ -1,33 +1,20 @@
 package model
 
-import (
-	"fmt"
-	"log"
-	"os"
-
-	"gopkg.in/yaml.v3"
-)
-
 type Config struct {
-	Repositories []Repository `yaml:"repositories"`
+	RemoteConfiguration []RemoteConfiguration `yaml:"repositories"`
+	ConfigIDRanges      []ConfigIDRange       `yaml:"idRanges"`
 }
 
-func NewConfig() *Config {
-	return &Config{}
+type RemoteConfiguration struct {
+	RepositoryName  string   `yaml:"name"`
+	RepositoryURL   string   `yaml:"url"`
+	RemoteName      string   `yaml:"remoteName"`
+	GithubAuthToken string   `yaml:"authToken"`
+	ExcludeBranches []string `yaml:"excludeBranches"`
 }
 
-func (c *Config) Load() error {
-	file, err := os.ReadFile("./config.yml")
-	if err != nil {
-		return fmt.Errorf("error opening config.yml: %v", err)
-	}
-
-	err = yaml.Unmarshal([]byte(file), &c)
-	if err != nil {
-		return fmt.Errorf("error reading config.yml: %v", err)
-	}
-
-	log.Println("Loaded configuration")
-
-	return nil
+type ConfigIDRange struct {
+	ObjectType ObjectType `yaml:"objectType"`
+	StartID    uint       `yaml:"from"`
+	EndID      uint       `yaml:"to"`
 }

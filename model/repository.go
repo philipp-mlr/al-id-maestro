@@ -5,11 +5,11 @@ import (
 )
 
 type Repository struct {
-	Name            string   `gorm:"primaryKey" yaml:"name"`
+	Name            string   `yaml:"name"`
 	URL             string   `yaml:"url"`
 	RemoteName      string   `yaml:"remoteName"`
-	AuthToken       string   `gorm:"-" yaml:"authToken"`
-	ExcludeBranches []string `gorm:"-" yaml:"excludeBranches"`
+	AuthToken       string   `yaml:"authToken"`
+	ExcludeBranches []string `yaml:"excludeBranches"`
 	LastScan        time.Time
-	Branches        []Branch `gorm:"foreignKey:RepositoryName"`
+	Branches        []Branch
 }
