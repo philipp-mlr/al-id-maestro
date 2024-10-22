@@ -5,4 +5,4 @@ tailwind-minify:
 	@npx tailwindcss -i ./input.css -o ./public/css/style.css --minify
 
 templ:
-	@templ generate -watch -proxy=http://localhost:1323
+	@templ generate -watch -proxy=http://localhost:8080

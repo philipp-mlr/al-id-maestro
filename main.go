@@ -88,5 +88,5 @@ func main() {
 	e.POST("/claim/request-id", claimHandler.HandleRequestID)
 
 	// Start server
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(":8080"))
 }
