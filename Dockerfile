@@ -1,20 +1,23 @@
-FROM golang:latest
+FROM golang:latest AS builder
 
 WORKDIR /app
 
-COPY ./handler ./handler
-COPY ./model ./model
-COPY ./component ./component
-COPY ./service ./service
-COPY ./public ./public
-COPY ./main.go ./main.go
-COPY ./go.mod ./go.mod
-COPY ./go.sum ./go.sum
+COPY go.mod go.sum ./
 
 RUN go mod download
 
+COPY . .
+
+RUN go mod verify
+
 RUN go build -o ./build/main .
+
+FROM alpine:latest
+
+WORKDIR /app
+
+COPY --from=builder /app/build/main .
 
 EXPOSE 8080
 
-CMD ["./build/main"]
+CMD ["./main"]

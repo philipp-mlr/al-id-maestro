@@ -1,0 +1,16 @@
+.github/
+node_modules/
+repo/
+tmp/
+*.exe
+*.toml
+.env
+.gitignore
+*.db
+*.yml
+*.example
+*.log
+input.css
+Makefile
+README.md
+tailwind.config.js
