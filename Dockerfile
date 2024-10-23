@@ -22,7 +22,7 @@ RUN npx tailwindcss -i ./input.css -o ./public/css/style.css --minify
 FROM golang:latest AS build-stage
 COPY --from=tailwind-stage /tailwind /app
 WORKDIR /app
-RUN CGO_ENABLED=0 GOOS=linux go build -o /app/main -buildvcs=false
+RUN GOOS=linux go build -o /app/main -buildvcs=false
 
 # Go test
 FROM build-stage AS test-stage
