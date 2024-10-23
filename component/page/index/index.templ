@@ -4,6 +4,12 @@ import "github.com/philipp-mlr/al-id-maestro/component/layout"
 
 templ Show(currPage map[string]bool) {
 	@layout.Base(currPage, "AL ID Maestro - Dashboard") {
-		<h1>Index</h1>
-	}
+			<div class="flex flex-col px-20">
+				<h1 class="my-20 text-4xl">Dashboard</h1>
+				<div class="flex flex-col justify-center mx-auto mt-48">
+					<p class="text-lg">🚧Under construction🚧</p>
+					<a hx-boost="true" href="/claim" class="mt-10 btn btn-primary btn-lg">Claim your ids now!</a>
+				</div>		
+			</div>
+		}
 }
