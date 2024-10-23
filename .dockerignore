@@ -10,7 +10,5 @@ tmp/
 *.yml
 *.example
 *.log
-input.css
 Makefile
 README.md
-tailwind.config.js
