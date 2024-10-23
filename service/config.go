@@ -12,7 +12,7 @@ import (
 func NewConfig(db *sqlx.DB) (*model.Config, error) {
 	c := model.Config{RemoteConfiguration: []model.RemoteConfiguration{}}
 
-	file, err := os.ReadFile("./config.yml")
+	file, err := os.ReadFile("./data/config.yml")
 	if err != nil {
 		return nil, fmt.Errorf("error opening config.yml: %v", err)
 	}
