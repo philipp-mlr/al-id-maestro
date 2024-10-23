@@ -26,7 +26,7 @@ func open(databaseFileName string) (*sqlx.DB, error) {
 	var db *sqlx.DB
 
 	// exactly the same as the built-in
-	db, err := sqlx.Open("sqlite3", fmt.Sprintf("./%s.db", databaseFileName))
+	db, err := sqlx.Open("sqlite3", fmt.Sprintf("./data/%s.db", databaseFileName))
 	if err != nil {
 		return nil, err
 	}
