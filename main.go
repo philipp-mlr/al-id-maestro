@@ -26,10 +26,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// err = service.Scan(db, config)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	err = service.Scan(db, config)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	err = service.UpdateClaimed(db)
 	if err != nil {
