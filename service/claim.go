@@ -31,6 +31,10 @@ func ClaimObjectID(db *sqlx.DB, allowed *model.AllowedList, objectType model.Obj
 		return nil, err
 	}
 
+	if len(found) >= len(objectTypeAllowedList) || len(claimed) >= len(objectTypeAllowedList) {
+		return nil, fmt.Errorf("No free %s IDs.", objectType)
+	}
+
 	for _, foundObject := range found {
 		i := model.BinarySearchAllowed(&objectTypeAllowedList, foundObject.ID, foundObject.ObjectType)
 
@@ -55,7 +59,6 @@ func ClaimObjectID(db *sqlx.DB, allowed *model.AllowedList, objectType model.Obj
 		if !allowedObject.Used {
 			c := model.NewClaimedObject(allowedObject.ID, allowedObject.ObjectType)
 
-			// insert claimed object into claimed table
 			err = insertClaimedObject(db, *c)
 			if err != nil {
 				return nil, err
