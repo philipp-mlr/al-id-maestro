@@ -1,3 +1,5 @@
+[![CI/CD](https://github.com/philipp-mlr/al-id-maestro/actions/workflows/CICD.yml/badge.svg?branch=main)](https://github.com/philipp-mlr/al-id-maestro/actions/workflows/CICD.yml)
+
 <p align="center">
   <picture>
     <source srcset="https://github.com/philipp-mlr/al-id-maestro/blob/main/public/img/logo.png?raw=true" width="25%" height="25%">
