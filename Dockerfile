@@ -19,10 +19,11 @@ COPY --from=templ-stage /templ /tailwind
 RUN npx tailwindcss -i ./input.css -o ./public/css/style.css --minify
 
 # Go build
-FROM golang:latest AS build-stage
+FROM golang:alpine AS build-stage
+RUN apk add --no-cache --update go gcc g++
 COPY --from=tailwind-stage /tailwind /app
 WORKDIR /app
-RUN GOOS=linux go build -o /app/main -buildvcs=false
+RUN CGO_ENABLED=1 GOOS=linux go build -o /app/main -buildvcs=false
 
 # Go test
 FROM build-stage AS test-stage
