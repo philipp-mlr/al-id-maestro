@@ -36,18 +36,16 @@ func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
 
 	deleteRemovedBranches(db, branches, config.RepositoryName)
 
-	log.Println("Cloning or opening repo...")
-
 	path := buildRepoPath(config.RepositoryURL)
 
 	repo, err := cloneOrOpenRepo(config.GithubAuthToken, config.RepositoryURL, path)
 	if err != nil {
+		log.Printf("Error cloning or opening repository %s %s", config.RepositoryURL, err)
 		return err
 	}
 
-	for _, branch := range branches {
-		// needs refactoring
-		log.Println("Processing branch", branch.Name)
+	for i, branch := range branches {
+		log.Printf("Processing branch %s | %d/%d", branch.Name, i+1, len(branches))
 
 		commitID := getLastCommitID(db, branch.Name, config.RepositoryName)
 
@@ -63,19 +61,22 @@ func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
 			Password: config.GithubAuthToken,
 		}
 
-		err = checkoutBranch(repo, authContext, branch.Name, config.RemoteName)
+		err = checkout(repo, authContext, branch.Name, config.RemoteName)
 		if err != nil {
-			return err
+			log.Printf("Error checking out branch %s %s", branch.Name, err)
+			continue
 		}
 
 		err = pull(repo, authContext, config.RemoteName, branch.Name)
 		if err != nil {
-			return err
+			log.Printf("Error pulling branch %s %s", branch.Name, err)
+			continue
 		}
 
 		err = traverseRepo(db, path, branch.Name, config.RepositoryName, branch.CommitID)
 		if err != nil {
-			return err
+			log.Printf("Error traversing repository %s %s", config.RepositoryURL, err)
+			continue
 		}
 	}
 

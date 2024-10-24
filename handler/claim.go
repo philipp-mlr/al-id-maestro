@@ -45,7 +45,7 @@ func (h *ClaimHandler) HandleRequestID(c echo.Context) error {
 
 	claimed, err := service.ClaimObjectID(h.DB, h.AllowedList, claimRequest.ObjectType)
 	if err != nil {
-		return Render(c, claim.ClaimedID("Not configured"))
+		return Render(c, claim.ClaimedID(err.Error()))
 	}
 
 	idString := strconv.Itoa(int(claimed.ID))

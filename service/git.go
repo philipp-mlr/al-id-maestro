@@ -67,7 +67,7 @@ func cloneOrOpenRepo(authToken string, url string, path string) (*git.Repository
 	_, err := os.Stat(path)
 
 	if os.IsNotExist(err) {
-		log.Println("Cloning repo...")
+		log.Printf("Cloning repo %s to %s", url, path)
 		repo, err = git.PlainClone(path, false, &git.CloneOptions{
 			URL: url,
 			Auth: &http.BasicAuth{
@@ -77,7 +77,7 @@ func cloneOrOpenRepo(authToken string, url string, path string) (*git.Repository
 			Progress: os.Stdout,
 		})
 	} else {
-		log.Println("Opening existing repo...")
+		log.Printf("Opening existing repo %s", path)
 		repo, err = git.PlainOpen(path)
 	}
 
@@ -88,7 +88,7 @@ func cloneOrOpenRepo(authToken string, url string, path string) (*git.Repository
 	return repo, nil
 }
 
-func checkoutBranch(repo *git.Repository, authContext http.BasicAuth, branchName string, remoteName string) error {
+func checkout(repo *git.Repository, authContext http.BasicAuth, branchName string, remoteName string) error {
 	branchRefName := plumbing.NewBranchReferenceName(branchName)
 	branchCoOpts := git.CheckoutOptions{
 		Branch: plumbing.ReferenceName(branchRefName),
@@ -156,12 +156,8 @@ func pull(repo *git.Repository, authContext http.BasicAuth, remoteName string, b
 		SingleBranch:  true,
 		ReferenceName: plumbing.NewBranchReferenceName(branchName),
 	})
-	if err != nil {
-		if err == git.NoErrAlreadyUpToDate {
-			log.Print("Branch already up to date")
-		} else {
-			return err
-		}
+	if err != nil && err != git.NoErrAlreadyUpToDate {
+		return err
 	}
 
 	return nil
