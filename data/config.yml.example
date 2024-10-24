@@ -12,22 +12,22 @@ repositories:
     excludeBranches:
       - release/
 idRanges:
-  - objectType: Codeunit
+  - objectType: Table
+    from: 50000
+    to:   99999
+  - objectType: TableExtension
     from: 50000
     to:   99999
   - objectType: Page
     from: 50000
     to:   99999
+  - objectType: PageExtension
+    from: 50000
+    to:   99999
   - objectType: Report
     from: 50000
     to:   99999
-  - objectType: Query
-    from: 50000
-    to:   99999
-  - objectType: XMLPort
-    from: 50000
-    to:   99999
-  - objectType: Table
+  - objectType: ReportExtension
     from: 50000
     to:   99999
   - objectType: Enum
@@ -36,16 +36,19 @@ idRanges:
   - objectType: EnumExtension
     from: 50000
     to:   99999
-  - objectType: PageExtension
-    from: 50000
-    to:   99999
-  - objectType: TableExtension
-    from: 50000
-    to:   99999
   - objectType: PermissionSet
     from: 50000
     to:   99999
   - objectType: PermissionSetExtension
+    from: 50000
+    to:   99999
+  - objectType: Codeunit
+    from: 50000
+    to:   99999
+  - objectType: Query
+    from: 50000
+    to:   99999
+  - objectType: XMLPort
     from: 50000
     to:   99999
   - objectType: MenuSuite
