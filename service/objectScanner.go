@@ -86,7 +86,7 @@ func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
 func buildRepoPath(url string) string {
 	path := strings.Replace(url, "https://", "", 1)
 	path = strings.Replace(path, "/", "_", -1)
-	path = "./repo/" + path
+	path = "./data/repo/" + path
 
 	return path
 }
