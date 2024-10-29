@@ -1,24 +1,23 @@
 package service
 
 import (
-	"bufio"
 	"encoding/json"
+	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/go-git/go-git/v5/plumbing/transport/http"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattn/go-sqlite3"
 	"github.com/philipp-mlr/al-id-maestro/model"
 )
 
-func Scan(db *sqlx.DB, config *model.Config) error {
+func Sync(db *sqlx.DB, config *model.Config) error {
 	for _, config := range config.RemoteConfiguration {
-		log.Println("Scanning repository ", config.RepositoryURL)
+		log.Printf("Processing repository %s", config.RepositoryURL)
+
 		err := scanRepository(&config, db)
 		if err != nil {
 			return err
@@ -36,86 +35,71 @@ func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
 
 	deleteRemovedBranches(db, branches, config.RepositoryName)
 
-	path := buildRepoPath(config.RepositoryURL)
-
-	repo, err := cloneOrOpenRepo(config.GithubAuthToken, config.RepositoryURL, path)
-	if err != nil {
-		log.Printf("Error cloning or opening repository %s %s", config.RepositoryURL, err)
-		return err
-	}
-
 	for i, branch := range branches {
-		log.Printf("Processing branch %s | %d/%d", branch.Name, i+1, len(branches))
+		log.Printf("%d/%d | syncing branch %s", i+1, len(branches), branch.Name)
 
 		commitID := getLastCommitID(db, branch.Name, config.RepositoryName)
 
 		update := commitID == "" || commitID != branch.CommitID
 
 		if !update {
-			log.Printf("Branch %v is up to date", branch.Name)
+			log.Print("Nothing to update\n\n")
 			continue
 		}
 
-		authContext := http.BasicAuth{
-			Username: "token",
-			Password: config.GithubAuthToken,
-		}
-
-		err = checkout(repo, authContext, branch.Name, config.RemoteName)
+		err = checkout(config.Git, config.AuthContext, branch.Name, config.RemoteName)
 		if err != nil {
-			log.Printf("Error checking out branch %s %s", branch.Name, err)
+			log.Printf("Error durching checkout on branch %s %s", branch.Name, err)
 			continue
 		}
 
-		err = pull(repo, authContext, config.RemoteName, branch.Name)
+		err = pull(config.Git, config.AuthContext, config.RemoteName, branch.Name)
 		if err != nil {
 			log.Printf("Error pulling branch %s %s", branch.Name, err)
 			continue
 		}
 
-		err = traverseRepo(db, path, branch.Name, config.RepositoryName, branch.CommitID)
+		err = traverseRepo(db, config, branch)
 		if err != nil {
 			log.Printf("Error traversing repository %s %s", config.RepositoryURL, err)
 			continue
 		}
+
+		log.Print("Done\n\n")
 	}
 
 	return nil
 }
 
-func buildRepoPath(url string) string {
-	path := strings.Replace(url, "https://", "", 1)
-	path = strings.Replace(path, "/", "_", -1)
-	path = "./data/repo/" + path
-
-	return path
-}
-
-func traverseRepo(db *sqlx.DB, dir string, branch string, repository string, commitID string) error {
-	total := new(int)
-	*total = 0
-
-	appData, err := getAppJsonFiles(dir)
+func traverseRepo(db *sqlx.DB, config *model.RemoteConfiguration, branch model.Branch) error {
+	appData, err := getAppJsonFiles(config)
 	if err != nil {
 		return err
 	}
 
-	log.Printf("Found %v apps in branch %v ", len(appData), branch)
-
 	for _, app := range appData {
-		deleteFoundObjects(db, app.ID, branch, repository)
-		log.Println("Checking app: ", app.Name)
-		err = filepath.Walk(app.BasePath, func(path string, info os.FileInfo, err error) error {
+		deleteFoundObjects(db, app.ID, branch.Name, config.RepositoryName)
 
+		err := Walk(config, func(f *object.File) error {
+			if !f.Mode.IsFile() {
+				return nil
+			}
+
+			if !strings.Contains(f.Name, app.BasePath) {
+				return nil
+			}
+
+			if filepath.Ext(f.Name) != ".al" {
+				return nil
+			}
+
+			lines, err := f.Lines()
 			if err != nil {
 				return err
 			}
 
-			// Check if the file has a ".al" extension
-			if !info.IsDir() && filepath.Ext(info.Name()) == ".al" {
-				if err := findAndInsertMatches(db, path, total, app.ID, app.Name, branch, repository, commitID); err != nil {
-					return err
-				}
+			if err := findAndInsertMatches(db, &lines, f.Name, app, branch, config.RepositoryName); err != nil {
+				return err
 			}
 
 			return nil
@@ -126,62 +110,51 @@ func traverseRepo(db *sqlx.DB, dir string, branch string, repository string, com
 		}
 	}
 
-	log.Println("Total objects found: ", *total)
-
 	return nil
 }
 
-func getAppJsonFiles(dir string) ([]model.AppJsonFile, error) {
+func getAppJsonFiles(config *model.RemoteConfiguration) ([]model.AppJsonFile, error) {
 	apps := []model.AppJsonFile{}
 
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+	err := Walk(config, func(f *object.File) error {
+		if !f.Mode.IsFile() {
+			return nil
+		}
+
+		if !strings.Contains(f.Name, "app.json") {
+			return nil
+		}
+
+		app := model.AppJsonFile{}
+
+		content, err := f.Contents()
 		if err != nil {
 			return err
 		}
 
-		if !info.IsDir() && info.Name() == "app.json" {
-			content, err := os.ReadFile(path)
-			if err != nil {
-				return err
-			}
-
-			app := model.AppJsonFile{}
-
-			err = json.Unmarshal(content, &app)
-			if err != nil {
-				return err
-			}
-
-			p := strings.Replace(path, "app.json", "", 1)
-			p = strings.ReplaceAll(p, "\\", "/")
-			p = "./" + p
-			app.BasePath = p
-
-			apps = append(apps, app)
+		err = json.Unmarshal([]byte(content), &app)
+		if err != nil {
+			return err
 		}
+
+		p := strings.Replace(f.Name, "app.json", "", 1)
+		app.BasePath = p
+
+		apps = append(apps, app)
+
 		return nil
 	})
 
-	if err != nil {
-		return nil, err
-	}
-
-	return apps, nil
+	return apps, err
 }
 
-func findAndInsertMatches(db *sqlx.DB, filePath string, total *int, appId string, appName string, branch string, repository string, commitID string) error {
-	file, err := os.Open(filePath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
+func findAndInsertMatches(db *sqlx.DB, lines *[]string, fileName string, app model.AppJsonFile, branch model.Branch, repository string) error {
 	pattern := regexp.MustCompile(`^(\w+) (\d{1,6}) "?([^"]*)"?$`)
 
-	for scanner.Scan() {
-		line := scanner.Text()
+	for _, line := range *lines {
+
 		matches := pattern.FindStringSubmatch(line)
+
 		if len(matches) == 4 {
 			// matches[0] is the full match, matches[1], matches[2], matches[3] are the capture groups
 
@@ -189,27 +162,15 @@ func findAndInsertMatches(db *sqlx.DB, filePath string, total *int, appId string
 			objectName := matches[3]
 			id, err := strconv.Atoi(matches[2])
 			if err != nil {
-				log.Println("Error converting ID to int for file", filePath)
-				continue
+				return fmt.Errorf("failed converting the object Id to type int for file %s", fileName)
 			}
 
-			foundObject := *model.NewFoundObject(uint(id), model.MapObjectType(objectType), objectName, appId, appName, branch, repository, filePath, commitID)
+			foundObject := *model.NewFoundObject(uint(id), model.MapObjectType(objectType), objectName, app, branch, repository, fileName)
 
 			err = insertFoundObject(db, foundObject)
 
-			if err == sqlite3.ErrConstraintUnique {
-				log.Printf("Object %v already exists in the database", foundObject.Name)
-			} else if err != nil {
-				return err
-			}
-
-			*total = *total + 1
-			break
+			return err
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return err
 	}
 
 	return nil

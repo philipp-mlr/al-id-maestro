@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
@@ -11,30 +12,34 @@ import (
 )
 
 func main() {
+	log.Println("Initializing database...")
 	db, err := service.InitDB("al-id-maestro")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	log.Println("Loading configuration...")
 	config, err := service.NewConfig(db)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	log.Println("Calculating allowed ID ranges...")
 	allowedList, err := service.NewAllowList(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = service.Scan(db, config)
+	log.Println("Initializing repositories in memory...")
+	err = service.GetRepositories(config)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = service.UpdateClaimed(db)
-	if err != nil {
-		log.Fatal(err)
-	}
+	log.Println("Starting cron jobs...")
+	go service.StartCronJob(30*time.Second, db, config)
+
+	log.Print("Starting server...\n\n")
 
 	// Echo instance
 	e := echo.New()
