@@ -96,7 +96,7 @@ func createSchema(db *sqlx.DB) error {
 
 func insertFoundObject(db *sqlx.DB, foundObject model.Found) error {
 	stmt := `
-		INSERT INTO 
+		INSERT OR REPLACE INTO 
 			found (id, type, name, app_id, app_name, branch, repository, file_path, commit_id, created_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`

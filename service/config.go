@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/go-git/go-git/v5/plumbing/transport/http"
 	"github.com/jmoiron/sqlx"
 	"github.com/philipp-mlr/al-id-maestro/model"
 	"gopkg.in/yaml.v3"
@@ -28,8 +29,15 @@ func NewConfig(db *sqlx.DB) (*model.Config, error) {
 	}
 
 	var repositories []string
-	for _, r := range c.RemoteConfiguration {
+	for i, r := range c.RemoteConfiguration {
+		// add repository for deletion if not found in config
 		repositories = append(repositories, r.RepositoryName)
+
+		// set auth context
+		c.RemoteConfiguration[i].AuthContext = http.BasicAuth{
+			Username: "token",
+			Password: r.GithubAuthToken,
+		}
 	}
 
 	if len(repositories) == 0 {

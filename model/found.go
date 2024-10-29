@@ -17,17 +17,17 @@ type Found struct {
 	CreatedAt  string     `db:"created_at"`
 }
 
-func NewFoundObject(id uint, objectType ObjectType, objectName string, appId string, appName string, branch string, repository string, filePath string, commitID string) *Found {
+func NewFoundObject(id uint, objectType ObjectType, objectName string, app AppJsonFile, branch Branch, repository string, filePath string) *Found {
 	return &Found{
 		ID:         id,
 		ObjectType: objectType,
 		Name:       objectName,
-		AppID:      appId,
-		AppName:    appName,
-		Branch:     branch,
+		AppID:      app.ID,
+		AppName:    app.Name,
+		Branch:     branch.Name,
 		Repository: repository,
 		FilePath:   filePath,
-		CommitID:   commitID,
+		CommitID:   branch.CommitID,
 		CreatedAt:  time.Now().Format(time.RFC1123),
 	}
 }
