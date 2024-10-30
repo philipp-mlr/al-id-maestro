@@ -32,10 +32,10 @@ RUN go test -v ./...
 # Deploy
 FROM alpine:latest AS deploy-stage
 WORKDIR /app
-RUN addgroup --system --gid 5000 app && adduser --system --no-create-home --uid 5000 app --ingroup app
-COPY --chown=app:app --from=build-stage /app/public /app/public
-COPY --chown=app:app --from=build-stage /app/main /app/main
-USER app
+#RUN addgroup --system --gid 5000 app && adduser --system --no-create-home --uid 5000 app --ingroup app
+#COPY --chown=app:app --from=build-stage /app/public /app/public
+#COPY --chown=app:app --from=build-stage /app/main /app/main
+#USER app
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10m \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/ || exit 1
