@@ -45,9 +45,7 @@ func Walk(config *model.RemoteConfiguration, f func(f *object.File) error) error
 		return err
 	}
 
-	tree.Files().ForEach(f)
-
-	return nil
+	return tree.Files().ForEach(f)
 }
 
 func getRemoteBranches(config *model.RemoteConfiguration) ([]model.Branch, error) {

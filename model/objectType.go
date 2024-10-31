@@ -19,6 +19,7 @@ const (
 	XMLPort                ObjectType = "XMLPort"
 	Query                  ObjectType = "Query"
 	MenuSuite              ObjectType = "MenuSuite"
+	Unknown                ObjectType = "Unknown"
 )
 
 func MapObjectType(objectType string) ObjectType {
@@ -52,7 +53,7 @@ func MapObjectType(objectType string) ObjectType {
 	case strings.ToLower(string(MenuSuite)):
 		return MenuSuite
 	default:
-		return ""
+		return Unknown
 	}
 }
 
