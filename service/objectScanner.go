@@ -71,48 +71,6 @@ func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
 	return nil
 }
 
-func traverseRepo(db *sqlx.DB, config *model.RemoteConfiguration, branch model.Branch) error {
-	appData, err := getAppJsonFiles(config)
-	if err != nil {
-		return err
-	}
-
-	for _, app := range appData {
-		//deleteFoundObjectsByBranchAndRepo(db, app.ID, branch.Name, config.RepositoryName)
-
-		err := Walk(config, func(f *object.File) error {
-			if !f.Mode.IsFile() {
-				return nil
-			}
-
-			if !strings.Contains(f.Name, app.BasePath) {
-				return nil
-			}
-
-			if filepath.Ext(f.Name) != ".al" {
-				return nil
-			}
-
-			lines, err := f.Lines()
-			if err != nil {
-				return err
-			}
-
-			if err := findAndInsertMatches(db, &lines, f.Name, app, branch, config.RepositoryName); err != nil {
-				return err
-			}
-
-			return nil
-		})
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 func traverseRepo2(db *sqlx.DB, config *model.RemoteConfiguration, branch model.Branch) error {
 	var found []model.Found
 	var apps []model.AppJsonFile
@@ -240,36 +198,6 @@ func getAppJsonFiles(config *model.RemoteConfiguration) ([]model.AppJsonFile, er
 	})
 
 	return apps, err
-}
-
-func findAndInsertMatches(db *sqlx.DB, lines *[]string, fileName string, app model.AppJsonFile, branch model.Branch, repository string) error {
-	pattern := regexp.MustCompile(`^(\w+) (\d{1,6}) "?([^"]*)"?$`)
-
-	for _, line := range *lines {
-
-		matches := pattern.FindStringSubmatch(line)
-
-		if len(matches) == 4 {
-			// matches[0] is the full match, matches[1], matches[2], matches[3] are the capture groups
-
-			objectType := matches[1]
-			objectName := matches[3]
-			id, err := strconv.Atoi(matches[2])
-			if err != nil {
-				return fmt.Errorf("failed converting the object Id to type int for file %s", fileName)
-			}
-
-			foundObject := *model.NewFoundObject(uint(id), model.MapObjectType(objectType), objectName, app, branch, repository, fileName)
-
-			err = insertFoundObject(db, foundObject)
-
-			fmt.Println("Insert")
-
-			return err
-		}
-	}
-
-	return nil
 }
 
 func findMatches(lines *[]string, file string) (model.ObjectType, string, int, error) {
