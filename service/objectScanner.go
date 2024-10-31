@@ -59,7 +59,7 @@ func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
 			continue
 		}
 
-		err = traverseRepo(db, config, branch)
+		err = traverseRepo2(db, config, branch)
 		if err != nil {
 			log.Printf("Error traversing repository %s %s", config.RepositoryURL, err)
 			continue
@@ -78,7 +78,7 @@ func traverseRepo(db *sqlx.DB, config *model.RemoteConfiguration, branch model.B
 	}
 
 	for _, app := range appData {
-		deleteFoundObjects(db, app.ID, branch.Name, config.RepositoryName)
+		//deleteFoundObjectsByBranchAndRepo(db, app.ID, branch.Name, config.RepositoryName)
 
 		err := Walk(config, func(f *object.File) error {
 			if !f.Mode.IsFile() {
@@ -109,6 +109,100 @@ func traverseRepo(db *sqlx.DB, config *model.RemoteConfiguration, branch model.B
 			return err
 		}
 	}
+
+	return nil
+}
+
+func traverseRepo2(db *sqlx.DB, config *model.RemoteConfiguration, branch model.Branch) error {
+	var found []model.Found
+	var apps []model.AppJsonFile
+
+	countALFiles := 0
+
+	err := Walk(config, func(f *object.File) error {
+		if !f.Mode.IsFile() {
+			return nil
+		}
+
+		if strings.Contains(f.Name, "app.json") {
+			content, err := f.Contents()
+			if err != nil {
+				return err
+			}
+
+			app := model.AppJsonFile{}
+
+			err = json.Unmarshal([]byte(content), &app)
+			if err != nil {
+				return err
+			}
+
+			p := strings.Replace(f.Name, "app.json", "", 1)
+			app.BasePath = p
+
+			apps = append(apps, app)
+
+			return nil
+		}
+
+		if filepath.Ext(f.Name) != ".al" {
+			return nil
+		}
+
+		countALFiles++
+
+		lines, err := f.Lines()
+		if err != nil {
+			return err
+		}
+
+		objectType, objectName, objectId, err := findMatches(&lines, f.Name)
+		if err != nil {
+			log.Printf("Error finding matches: %s", err)
+			return nil
+		}
+
+		newFoundObject := model.NewFoundObject(
+			uint(objectId),
+			objectType,
+			objectName,
+			model.AppJsonFile{},
+			branch,
+			config.RepositoryName,
+			f.Name)
+
+		found = append(found, *newFoundObject)
+
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	for i, f := range found {
+		for _, app := range apps {
+			if strings.Contains(f.FilePath, app.BasePath) {
+				found[i].AppID = app.ID
+				found[i].AppName = app.Name
+			}
+		}
+	}
+
+	if err = deleteFoundObjectsByBranchAndRepo(db, branch.Name, config.RepositoryName); err != nil {
+		return err
+	}
+
+	for _, f := range found {
+		err = insertFoundObject(db, f)
+		if err != nil {
+			return fmt.Errorf("error inserting found object: %s %v", err, f)
+		}
+	}
+
+	log.Printf("Found %s AL files in branch %s\n", strconv.Itoa(countALFiles), branch.Name)
+	log.Printf("Found %s objects in branch %s\n", strconv.Itoa(len(found)), branch.Name)
+	log.Printf("Found %s apps in branch %s\n", strconv.Itoa(len(apps)), branch.Name)
 
 	return nil
 }
@@ -169,9 +263,42 @@ func findAndInsertMatches(db *sqlx.DB, lines *[]string, fileName string, app mod
 
 			err = insertFoundObject(db, foundObject)
 
+			fmt.Println("Insert")
+
 			return err
 		}
 	}
 
 	return nil
+}
+
+func findMatches(lines *[]string, file string) (model.ObjectType, string, int, error) {
+	pattern := regexp.MustCompile(`^(\w+) (\d{1,6}) "?"?([^"]*)?"?`)
+
+	for _, line := range *lines {
+		matches := pattern.FindStringSubmatch(line)
+
+		if len(matches) == 4 {
+			// matches[0] is the full match, matches[1], matches[2], matches[3] are the capture groups
+
+			objectType := model.MapObjectType(matches[1])
+			if objectType == model.Unknown {
+				return model.Unknown, "", 0, fmt.Errorf("unknown object type %s for file %s", matches[1], file)
+			}
+
+			id, err := strconv.Atoi(matches[2])
+			if err != nil {
+				return model.Unknown, "", 0, fmt.Errorf("failed converting the object Id to type int for file %s", file)
+			}
+
+			objectName := matches[3]
+			if objectName == "" {
+				return model.Unknown, "", 0, fmt.Errorf("object name is empty for file %s", file)
+			}
+
+			return objectType, objectName, id, nil
+		}
+	}
+
+	return model.Unknown, "", 0, fmt.Errorf("no object definition found in file %s", file)
 }

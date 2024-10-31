@@ -96,7 +96,7 @@ func createSchema(db *sqlx.DB) error {
 
 func insertFoundObject(db *sqlx.DB, foundObject model.Found) error {
 	stmt := `
-		INSERT OR REPLACE INTO 
+		INSERT INTO 
 			found (id, type, name, app_id, app_name, branch, repository, file_path, commit_id, created_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`
@@ -120,15 +120,14 @@ func insertFoundObject(db *sqlx.DB, foundObject model.Found) error {
 	return nil
 }
 
-func deleteFoundObjects(db *sqlx.DB, appID string, branch string, repository string) error {
+func deleteFoundObjectsByBranchAndRepo(db *sqlx.DB, branch string, repository string) error {
 	stmt := `
 		DELETE FROM found
-			WHERE app_id = ?
-			AND branch = ?
+			WHERE branch = ?
 			AND repository = ?
 	`
 
-	_, err := db.Exec(stmt, appID, branch, repository)
+	_, err := db.Exec(stmt, branch, repository)
 	if err != nil {
 		return err
 	}
