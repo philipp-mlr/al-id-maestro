@@ -59,7 +59,7 @@ func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
 			continue
 		}
 
-		err = traverseRepo2(db, config, branch)
+		err = scanAndInsertRepositoryFiles(db, config, branch)
 		if err != nil {
 			log.Printf("Error traversing repository %s %s", config.RepositoryURL, err)
 			continue
@@ -71,7 +71,7 @@ func scanRepository(config *model.RemoteConfiguration, db *sqlx.DB) error {
 	return nil
 }
 
-func traverseRepo2(db *sqlx.DB, config *model.RemoteConfiguration, branch model.Branch) error {
+func scanAndInsertRepositoryFiles(db *sqlx.DB, config *model.RemoteConfiguration, branch model.Branch) error {
 	var found []model.Found
 	var apps []model.AppJsonFile
 
@@ -163,41 +163,6 @@ func traverseRepo2(db *sqlx.DB, config *model.RemoteConfiguration, branch model.
 	log.Printf("Found %s apps in branch %s\n", strconv.Itoa(len(apps)), branch.Name)
 
 	return nil
-}
-
-func getAppJsonFiles(config *model.RemoteConfiguration) ([]model.AppJsonFile, error) {
-	apps := []model.AppJsonFile{}
-
-	err := Walk(config, func(f *object.File) error {
-		if !f.Mode.IsFile() {
-			return nil
-		}
-
-		if !strings.Contains(f.Name, "app.json") {
-			return nil
-		}
-
-		app := model.AppJsonFile{}
-
-		content, err := f.Contents()
-		if err != nil {
-			return err
-		}
-
-		err = json.Unmarshal([]byte(content), &app)
-		if err != nil {
-			return err
-		}
-
-		p := strings.Replace(f.Name, "app.json", "", 1)
-		app.BasePath = p
-
-		apps = append(apps, app)
-
-		return nil
-	})
-
-	return apps, err
 }
 
 func findMatches(lines *[]string, file string) (model.ObjectType, string, int, error) {
