@@ -5,13 +5,21 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/jmoiron/sqlx"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/philipp-mlr/al-id-maestro/handler"
+	"github.com/philipp-mlr/al-id-maestro/model"
 	"github.com/philipp-mlr/al-id-maestro/service"
 )
 
 func main() {
+	db, allowedList := initSetup()
+
+	initHttpServer(db, allowedList)
+}
+
+func initSetup() (*sqlx.DB, *model.AllowedList) {
 	log.Println("Initializing database...")
 	db, err := service.InitDB("al-id-maestro")
 	if err != nil {
@@ -30,8 +38,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("Initializing repositories in memory...")
-	err = service.GetRepositories(config)
+	err = service.InitRepos(config)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,6 +48,10 @@ func main() {
 
 	log.Print("Starting server...\n\n")
 
+	return db, allowedList
+}
+
+func initHttpServer(db *sqlx.DB, allowedList *model.AllowedList) {
 	// Echo instance
 	e := echo.New()
 

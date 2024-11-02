@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/go-git/go-billy/v5/memfs"
@@ -15,16 +16,30 @@ import (
 	"github.com/philipp-mlr/al-id-maestro/model"
 )
 
-func GetRepositories(config *model.Config) error {
-	for i, c := range config.RemoteConfiguration {
+func InitRepos(config *model.Config) error {
+	onDiskEnv := os.Getenv("CLONE_ON_DISK")
+	v := strings.Contains(strings.ToLower(onDiskEnv), "true")
 
-		r, err := cloneRepository(c.GithubAuthToken, c.RepositoryURL, c.RepositoryName)
-		config.RemoteConfiguration[i].Git = r
+	if v {
+		log.Println("Initializing repositories on disk...")
+	} else {
+		log.Println("Initializing repositories in memory...")
+	}
+
+	return GetRepositories(config, v)
+}
+
+func GetRepositories(config *model.Config, onDisk bool) error {
+	for i, c := range config.RemoteConfiguration {
+		r, err := cloneRepository(c, onDisk)
 
 		if err != nil {
 			return err
 		}
+
+		config.RemoteConfiguration[i].Git = r
 	}
+
 	return nil
 }
 
@@ -95,40 +110,36 @@ func isExcludeBranch(branch string, excludeBranches []string) bool {
 	return false
 }
 
-func cloneRepository(authToken string, url string, path string) (*git.Repository, error) {
-	var repo *git.Repository
-	fs := memfs.New()
-
-	repo, err := git.Clone(memory.NewStorage(), fs, &git.CloneOptions{
-		URL: url,
-		Auth: &http.BasicAuth{
-			Username: "token",
-			Password: authToken,
-		},
-	})
-
-	//_, err := os.Stat(path)
-
-	// if os.IsNotExist(err) {
-	// 	log.Printf("Cloning repo %s to %s", url, path)
-	// 	repo, err = git.Clone(memory.NewStorage(), nil, &git.CloneOptions{
-	// 		URL: url,
-	// 		Auth: &http.BasicAuth{
-	// 			Username: "token",
-	// 			Password: authToken,
-	// 		},
-	// 		Progress: os.Stdout,
-	// 	})
-	// } else {
-	// 	log.Printf("Opening existing repo %s", path)
-	// 	repo, err = git.Open(path)
-	// }
-
-	if err != nil {
-		return nil, err
+func cloneRepository(config model.RemoteConfiguration, onDisk bool) (*git.Repository, error) {
+	if onDisk {
+		return openOrCloneRepositoryOnDisk(config)
 	}
 
-	return repo, nil
+	return cloneRepositoryInMemory(config)
+}
+
+func openOrCloneRepositoryOnDisk(config model.RemoteConfiguration) (*git.Repository, error) {
+	path := "./data/" + config.RepositoryName
+
+	_, err := os.Stat(path)
+
+	if os.IsNotExist(err) {
+		return git.PlainClone(path, false, &git.CloneOptions{
+			URL:  config.RepositoryURL,
+			Auth: &config.AuthContext,
+		})
+	}
+
+	return git.PlainOpen(path)
+}
+
+func cloneRepositoryInMemory(config model.RemoteConfiguration) (*git.Repository, error) {
+	fs := memfs.New()
+
+	return git.Clone(memory.NewStorage(), fs, &git.CloneOptions{
+		URL:  config.RepositoryURL,
+		Auth: &config.AuthContext,
+	})
 }
 
 func checkout(repo *git.Repository, authContext http.BasicAuth, branchName string, remoteName string) error {
