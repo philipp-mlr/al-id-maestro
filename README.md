@@ -25,7 +25,7 @@ You need to map a volume to the `/app/data` directory. Inside this directory, th
 Use the following command to run the container locally:
 
 ```
-docker run -d -p 8080:8080 -v "C:/path:/app/data" -e CLONE_ON_DISK=false --name al-id-maestro ghcr.io/philipp-mlr/al-id-maestro:main
+docker run -d -p 5000:5000 -v "C:/path:/app/data" -e CLONE_ON_DISK=false --name al-id-maestro ghcr.io/philipp-mlr/al-id-maestro:main
 ```
 
 ## Environment Variables
