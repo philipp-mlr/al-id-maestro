@@ -119,7 +119,7 @@ func cloneRepository(config model.RemoteConfiguration, onDisk bool) (*git.Reposi
 }
 
 func openOrCloneRepositoryOnDisk(config model.RemoteConfiguration) (*git.Repository, error) {
-	path := "./data/" + config.RepositoryName
+	path := "./data/repos/" + config.RepositoryName
 
 	_, err := os.Stat(path)
 
