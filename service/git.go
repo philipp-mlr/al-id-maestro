@@ -17,13 +17,13 @@ import (
 )
 
 func InitRepos(config *model.Config) error {
-	onDiskEnv := os.Getenv("CLONE_ON_DISK")
+	onDiskEnv := os.Getenv("CLONE_IN_MEMORY")
 	v := strings.Contains(strings.ToLower(onDiskEnv), "true")
 
 	if v {
-		log.Println("Initializing repositories on disk...")
-	} else {
 		log.Println("Initializing repositories in memory...")
+	} else {
+		log.Println("Initializing repositories on disk...")
 	}
 
 	return GetRepositories(config, v)

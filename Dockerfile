@@ -38,7 +38,7 @@ WORKDIR /app
 COPY --chown=root:root --from=build-stage /app/public /app/public
 COPY --chown=root:root --from=build-stage /app/main /app/main
 #USER app
-ENV CLONE_ON_DISK=false
+ENV CLONE_IN_MEMORY=true
 EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10m \
   CMD wget --no-verbose --tries=1 --spider http://localhost:5000/ || exit 1
