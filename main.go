@@ -38,7 +38,6 @@ func initSetup() (*sqlx.DB, *model.AllowedList) {
 		log.Fatal(err)
 	}
 
-	log.Println("Initializing repositories...")
 	err = service.InitRepos(config)
 	if err != nil {
 		log.Fatal(err)
