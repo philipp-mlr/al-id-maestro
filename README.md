@@ -20,19 +20,19 @@ You need to map a volume to the `/app/data` directory. Inside this directory, th
 
 - look for the `config.yml`
 - create a database
-- store repositories
+- store repositories (if CLONE_IN_MEMORY=false)
 
 Use the following command to run the container locally:
 
 ```
-docker run -d -p 5000:5000 -v "C:/path:/app/data" -e CLONE_ON_DISK=false --name al-id-maestro ghcr.io/philipp-mlr/al-id-maestro:main
+docker run -d -p 5000:5000 -v "C:/path:/app/data" -e CLONE_IN_MEMORY=true --name al-id-maestro ghcr.io/philipp-mlr/al-id-maestro:main
 ```
 
 ## Environment Variables
 
-| Variable      | Description                                                                                                                                              | Default | Required |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------- |
-| CLONE_ON_DISK | `true` = Repos get cloned onto the disk. Faster start-up time, slower reads. `false` = Repos get cloned into memory. Slower start-up time, faster reads. | false   | false    |
+| Variable        | Description                                                                                                                                              | Default | Required |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | -------- |
+| CLONE_IN_MEMORY | `true` = Repos get cloned into memory. Slower start-up time, faster reads. `false` = Repos get cloned onto the disk. Faster start-up time, slower reads. | true    | false    |
 
 ## Config
 
