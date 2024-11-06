@@ -17,9 +17,8 @@ templ Show(currPage map[string]bool) {
 						<tr>
 							<th>ID</th>
 							<th>Type</th>
-							<th>Name</th>
+							<th>Object Name</th>
 							<th>App Name</th>
-							<th>App Id</th>
 							<th>Repository</th>
 						</tr>
 					</thead>
@@ -37,10 +36,8 @@ templ TableItem(found []model.Found, nextPage uint64) {
 				<td>{ fmt.Sprint(object.ID) }</td>
 				<td>{ fmt.Sprint(object.ObjectType) }</td>
 				<td>{ fmt.Sprint(object.Name) }</td>
-				<td>{ fmt.Sprint(object.AppID) }</td>
 				<td>{ fmt.Sprint(object.AppName) }</td>
 				<td>{ fmt.Sprint(object.Repository) }</td>
-				//<td>{ fmt.Sprint(object.FilePath) }</td>
 			</tr>
 		} else {
 			<tr
@@ -52,10 +49,8 @@ templ TableItem(found []model.Found, nextPage uint64) {
 				<td>{ fmt.Sprint(object.ID) }</td>
 				<td>{ fmt.Sprint(object.ObjectType) }</td>
 				<td>{ fmt.Sprint(object.Name) }</td>
-				<td>{ fmt.Sprint(object.AppID) }</td>
 				<td>{ fmt.Sprint(object.AppName) }</td>
 				<td>{ fmt.Sprint(object.Repository) }</td>
-				//<td>{ fmt.Sprint(object.FilePath) }</td>
 			</tr>
 		}
 	}

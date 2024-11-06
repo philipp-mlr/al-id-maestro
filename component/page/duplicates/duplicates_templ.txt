@@ -1,6 +1,5 @@
-<div class=\"px-20\"><h1 class=\"my-20 text-4xl\">Duplicated IDs</h1><div class=\"overflow-x-auto\" hx-trigger=\"load\" hx-get=\"/duplicates?page=1\" hx-target=\"#table-items\" hx-swap=\"innerHTML\"><table class=\"table overflow-auto table-sm md:table-md xl:table-lg table-zebra\"><!-- head --><thead><tr><th>ID</th><th>Type</th><th>Name</th><th>App Name</th><th>App Id</th><th>Repository</th></tr></thead> <tbody id=\"table-items\"></tbody></table></div></div>
+<div class=\"px-20\"><h1 class=\"my-20 text-4xl\">Duplicated IDs</h1><div class=\"overflow-x-auto\" hx-trigger=\"load\" hx-get=\"/duplicates?page=1\" hx-target=\"#table-items\" hx-swap=\"innerHTML\"><table class=\"table overflow-auto table-sm md:table-md xl:table-lg table-zebra\"><!-- head --><thead><tr><th>ID</th><th>Type</th><th>Object Name</th><th>App Name</th><th>Repository</th></tr></thead> <tbody id=\"table-items\"></tbody></table></div></div>
 <tr><td>
-</td><td>
 </td><td>
 </td><td>
 </td><td>
