@@ -110,12 +110,12 @@ func isExcludeBranch(branch string, excludeBranches []string) bool {
 	return false
 }
 
-func cloneRepository(config model.RemoteConfiguration, onDisk bool) (*git.Repository, error) {
-	if onDisk {
-		return openOrCloneRepositoryOnDisk(config)
+func cloneRepository(config model.RemoteConfiguration, cloneInMemory bool) (*git.Repository, error) {
+	if cloneInMemory {		
+		return cloneRepositoryInMemory(config)
 	}
 
-	return cloneRepositoryInMemory(config)
+	return openOrCloneRepositoryOnDisk(config)
 }
 
 func openOrCloneRepositoryOnDisk(config model.RemoteConfiguration) (*git.Repository, error) {
