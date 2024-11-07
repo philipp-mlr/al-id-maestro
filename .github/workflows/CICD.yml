@@ -21,8 +21,10 @@ jobs:
             ghcr.io/philipp-mlr/al-id-maestro
           # generate Docker tags based on the following events/attributes
           tags: |
-            type=raw,value=latest
-            type=sha
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
