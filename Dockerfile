@@ -19,11 +19,21 @@ COPY --from=templ-stage /templ /tailwind
 RUN npx tailwindcss -i ./input.css -o ./public/css/style.css --minify
 
 # Go build
-FROM golang:alpine AS build-stage
+FROM --platform=$BUILDPLATFORM golang:alpine AS build-stage
+ARG TARGETOS
+ARG TARGETARCH
 RUN apk add --no-cache --update go gcc g++
+RUN if [ "${TARGETARCH}" = "arm64" ]; then \
+  wget -P ~ https://musl.cc/aarch64-linux-musl-cross.tgz \
+  && tar -xvzf ~/aarch64-linux-musl-cross.tgz -C /usr/local \
+  && rm ~/aarch64-linux-musl-cross.tgz; \
+  fi
 COPY --from=tailwind-stage /tailwind /app
 WORKDIR /app
-RUN CGO_ENABLED=1 GOOS=linux go build -o /app/main -buildvcs=false
+RUN if [ "${TARGETARCH}" = "arm64" ]; then \
+  export CC=/usr/local/aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc; \
+  fi && \
+  CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /app/main -buildvcs=false
 
 # Go test
 FROM build-stage AS test-stage

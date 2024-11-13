@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"log"
+	"net/http"
 	"strconv"
 	"strings"
 
@@ -24,33 +26,90 @@ func (h ClaimHandler) HandlePageShow(c echo.Context) error {
 	return Render(c, claim.Show(InitActivePage(c)))
 }
 
-func (h *ClaimHandler) HandleRequestID(c echo.Context) error {
+func (h *ClaimHandler) HandleNewObjectClaim(c echo.Context) error {
 	claimRequest := ClaimRequest{}
 
 	if err := c.Bind(&claimRequest); err != nil {
+		log.Println(err)
 		return err
 	}
 
 	if err := c.Validate(claimRequest); err != nil {
+		log.Println(err)
 		return err
 	}
 
-	if model.MapObjectType(string(claimRequest.ObjectType)) == "" {
+	objectType := model.MapObjectType(string(claimRequest.ObjectType))
+	if objectType == model.Unknown {
 		return echo.ErrBadRequest
 	}
 
 	if err := service.UpdateClaimed(h.DB); err != nil {
+		log.Println(err)
 		return err
 	}
 
-	claimed, err := service.ClaimObjectID(h.DB, h.AllowedList, claimRequest.ObjectType)
+	claimed, err := service.ClaimObjectID(h.DB, h.AllowedList, objectType)
 	if err != nil {
+		log.Println(err)
 		return Render(c, claim.ClaimedID(err.Error()))
 	}
 
-	idString := strconv.Itoa(int(claimed.ID))
+	return Render(c, claim.ClaimedID(strconv.Itoa(int(claimed.ID))))
+}
 
-	return Render(c, claim.ClaimedID(idString))
+type ObjectClaimAPIResponse struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+}
+
+type ObjectClaimAPIError struct {
+	Message string `json:"message"`
+}
+
+func (h *ClaimHandler) HandleNewObjectClaimAPI(c echo.Context) error {
+	claimRequest := ClaimRequest{}
+
+	if err := c.Bind(&claimRequest); err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusInternalServerError, ObjectClaimAPIError{
+			Message: "Invalid request body",
+		})
+	}
+
+	if err := c.Validate(claimRequest); err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusInternalServerError, ObjectClaimAPIError{
+			Message: "Invalid request body",
+		})
+	}
+
+	objectType := model.MapObjectType(string(claimRequest.ObjectType))
+	if objectType == model.Unknown {
+		return c.JSON(http.StatusInternalServerError, ObjectClaimAPIError{
+			Message: "Invalid object type",
+		})
+	}
+
+	if err := service.UpdateClaimed(h.DB); err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusInternalServerError, ObjectClaimAPIError{
+			Message: "Error updating claimed objects",
+		})
+	}
+
+	claimed, err := service.ClaimObjectID(h.DB, h.AllowedList, objectType)
+	if err != nil {
+		log.Println(err)
+		return c.JSON(http.StatusInternalServerError, ObjectClaimAPIError{
+			Message: "Could not claim object",
+		})
+	}
+
+	return c.JSON(http.StatusOK, ObjectClaimAPIResponse{
+		ID:   strconv.Itoa(int(claimed.ID)),
+		Type: string(claimed.ObjectType),
+	})
 }
 
 type ObjectTypeQuery struct {
