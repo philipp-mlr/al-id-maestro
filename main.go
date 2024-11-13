@@ -101,7 +101,9 @@ func initHttpServer(db *sqlx.DB, allowedList *model.AllowedList) {
 
 	e.POST("/claim/query-type", claimHandler.HandleObjectTypeQuery)
 
-	e.POST("/claim/request-id", claimHandler.HandleRequestID)
+	e.POST("/claim/request-id", claimHandler.HandleNewObjectClaim)
+
+	e.POST("/api/request-id", claimHandler.HandleNewObjectClaimAPI)
 
 	// Start server
 	e.Logger.Fatal(e.Start(":5000"))
