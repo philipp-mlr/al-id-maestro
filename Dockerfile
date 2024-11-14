@@ -45,6 +45,7 @@ WORKDIR /app
 RUN addgroup --system --gid 5000 app && adduser --system --no-create-home --uid 5000 app --ingroup app
 COPY --chown=app:app --from=build-stage /app/website/public /app/public
 COPY --chown=app:app --from=build-stage /app/main /app/cmd/main
+RUN ls -al
 USER app
 ENV CLONE_IN_MEMORY=true
 EXPOSE 5000
