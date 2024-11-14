@@ -1,0 +1,67 @@
+package index
+
+import "github.com/philipp-mlr/al-id-maestro/website/component/layout"
+
+templ Show(currPage map[string]bool) {
+	@layout.Base(currPage, "AL ID Maestro - Dashboard") {
+			<div class="flex flex-col px-20">
+				<h1 class="my-20 text-4xl">Dashboard</h1>
+					
+				// <div class="flex flex-col justify-center w-64 rounded-lg bg-base-200">
+				// 	<h2 class="mb-10 text-base-content">Free Objects</h2>
+
+				// 	<div>
+				// 		@statItem("Tables", "500")
+				// 		@statItem("Tables", "50000")
+				// 		@statItem("Tables", "50")
+				// 		@statItem("Tables", "5")
+				// 		@statItem("Tables", "5000")
+				// 		@statItem("Tables", "500")
+				// 	</div>
+				// </div>				
+				<div>
+					<canvas id="myChart"></canvas>
+				</div>	
+			</div>
+
+			<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+			<script>
+				const ctx = document.getElementById('myChart');
+
+				new Chart(ctx, {
+					type: 'line',
+					data: {
+					labels: ["January", "February", "March", "April", "May", "June", "July"],
+					datasets: [{
+						label: 'Objects Claimed',
+						data: [65, 59, 80, 81, 56, 55, 40],
+						fill: true,
+						borderColor: 'rgb(75, 192, 192)',
+						tension: 0.1
+					}, {
+						label: 'Objects Used',
+						data: [28, 48, 40, 19, 86, 27, 90],
+						fill: true,
+						borderColor: 'rgb(255, 99, 132)',
+						tension: 0.1
+					}]
+					},
+					options: {
+					scales: {
+						y: {
+						beginAtZero: true
+						}
+					}
+					}
+				});
+			</script>
+		}
+}
+
+templ statItem(title string, value string) {
+	<div class="flex items-end justify-center">
+		<div class="text-2xl text-white min-w-24">{value}</div>
+		<div>{title}</div>
+	</div>
+}

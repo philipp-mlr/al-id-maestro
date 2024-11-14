@@ -1,0 +1,109 @@
+package claim
+
+import (
+	"github.com/philipp-mlr/al-id-maestro/website/component/layout"
+	"github.com/philipp-mlr/al-id-maestro/internal/model"
+)
+
+templ Show(currPage map[string]bool) {
+	@layout.Base(currPage, "AL ID Maestro - Claim ID") {
+		<div class="flex items-center justify-center h-screen">
+			<div class="relative px-48 py-16 text-center rounded-lg no-shrink min-w-80 bg-base-200">
+				<h1 class="mb-4 text-4xl font-bold">Claim ID</h1>
+				<div class="grid h-16 grid-cols-2 gap-4 mb-10">
+					<p class="relative inline-flex items-center justify-center text-lg">
+						Your ID is 
+					</p>
+					<div id="newID" class="inline-flex items-center justify-left"></div>
+				</div>
+				<div class="flex items-center justify-center mb-16 space-x-20" hx-post="/claim/query-type" hx-trigger="load" hx-target="#search-results">
+					<div id="dropdown" class="dropdown dropdown-bottom">
+						<input id="dropdownInput" hx-ext="json-enc" hx-post="/claim/query-type" hx-trigger="keyup changed delay:100ms" hx-target="#search-results" name="query" type="query" tabindex="0" role="button" type="text" placeholder="Object type" class="w-64 max-w-xs input input-bordered"/>
+						<ul id="dropdownMenu" tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
+							<div id="search-results"></div>
+						</ul>
+					</div>
+					<button hx-ext="json-enc" hx-post="/claim/request-id" hx-include="#dropdownInput" hx-target="#newID" class="w-32 text-xl font-bold btn btn-primary">Go</button>
+				</div>
+
+				<a href="/history" class="btn btn-neutral btn-wide">History</a>
+				
+				<div class="absolute top-2 right-2">
+					<div class="relative group">
+						<svg class="w-auto h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+							<path stroke-linecap="round" stroke-linejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"></path>
+						</svg>
+						<div class="absolute right-0 w-64 p-2 mt-2 text-xs text-white transition-opacity duration-300 rounded-lg shadow-lg opacity-0 bg-base-100 group-hover:opacity-100">
+							If not committed to version control within 3 days, the ID will be available again
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+            function CopyToClipboard() {
+                var objectID = document.getElementById("objectID");
+                var text = objectID.innerText;
+                navigator.clipboard.writeText(text);
+
+                var copyToClipboardIcon = document.getElementById("copyToClipboardIcon");
+                var copiedToClipboardIcon = document.getElementById("copiedToClipboardIcon");
+
+                copyToClipboardIcon.classList.add("hidden");
+                copiedToClipboardIcon.classList.remove("hidden");
+
+                setTimeout(function() {
+                    copyToClipboardIcon.classList.remove("hidden");
+                    copiedToClipboardIcon.classList.add("hidden");
+                }, 3000);
+            }
+
+            function setInputValue() {
+                var input = document.querySelector('input[name="query"]');
+                input.value = event.target.innerText;
+
+                // Hide dropdown
+                var dropdownMenu = document.getElementById("dropdownMenu");
+                dropdownMenu.classList.add("hidden");
+
+            }
+
+            var input = document.querySelector('input[name="query"]');
+            input.addEventListener("input", function() {
+                var dropdownMenu = document.getElementById("dropdownMenu");
+                dropdownMenu.classList.remove("hidden");
+            });
+
+            // When the input is clicked, show the dropdown
+            input.addEventListener("click", function() {
+                var dropdownMenu = document.getElementById("dropdownMenu");
+                dropdownMenu.classList.remove("hidden");
+            });
+            
+			function setInputValueOnEnter() {
+				if (event.key === "Enter") {
+					setInputValue();
+				}
+			}
+
+        </script>
+	}
+}
+
+templ ClaimedID(id string) {
+	<div class="inline-flex items-center hover:cursor-pointer">
+		<div id="objectID" class="text-3xl font-bold min-w-10">{ id }</div>
+		<svg id="copyToClipboardIcon" onclick="CopyToClipboard()" class="w-auto h-6 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z"></path>
+		</svg>
+		<svg id="copiedToClipboardIcon" class="hidden w-auto h-6 ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+			<path stroke-linecap="round" stroke-linejoin="round" d="M11.35 3.836c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m8.9-4.414c.376.023.75.05 1.124.08 1.131.094 1.976 1.057 1.976 2.192V16.5A2.25 2.25 0 0 1 18 18.75h-2.25m-7.5-10.5H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V18.75m-7.5-10.5h6.375c.621 0 1.125.504 1.125 1.125v9.375m-8.25-3 1.5 1.5 3-3.75"></path>
+		</svg>
+	</div>
+}
+
+templ QueryResults(results []model.ObjectType) {
+	for _, r := range results {
+		<li ><a tabindex="0" onclick="setInputValue(this)" onkeydown="setInputValueOnEnter(this)">{ string(r) }</a></li>
+	}
+}
