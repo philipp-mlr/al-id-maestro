@@ -72,7 +72,7 @@ func initHttpServer(db *sqlx.DB, allowedList *model.LicensedObjectList, repoInfo
 	e.Pre(middleware.RemoveTrailingSlash())
 
 	e.Validator = &handler.CustomValidator{Validator: validator.New(validator.WithRequiredStructEnabled())}
-	e.Static("/static", "../website/public")
+	e.Static("/static", "./website/public")
 
 	indexHandler := handler.IndexHandler{
 		DB: db,

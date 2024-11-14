@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
@@ -25,10 +26,13 @@ func InitDB(databaseFileName string) (*sqlx.DB, error) {
 func open(databaseFileName string) (*sqlx.DB, error) {
 	var db *sqlx.DB
 
+	file := fmt.Sprintf("./data/%s.db", databaseFileName)
+	log.Println("Opening database file: ", file)
+
 	// exactly the same as the built-in
-	db, err := sqlx.Open("sqlite3", fmt.Sprintf("../data/%s.db", databaseFileName))
+	db, err := sqlx.Open("sqlite3", file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database: %w %s", err, databaseFileName)
+		return nil, err
 	}
 
 	// force a connection and test that it worked

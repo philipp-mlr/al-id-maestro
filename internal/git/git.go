@@ -120,7 +120,7 @@ func cloneRepository(config config.RemoteConfiguration, cloneInMemory bool) (*gi
 }
 
 func openOrCloneRepositoryOnDisk(config config.RemoteConfiguration) (*git.Repository, error) {
-	path := "../data/repos/" + config.RepositoryName
+	path := "./data/repos/" + config.RepositoryName
 
 	_, err := os.Stat(path)
 
