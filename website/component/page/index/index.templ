@@ -1,0 +1,119 @@
+package index
+
+import (
+	"github.com/philipp-mlr/al-id-maestro/website/component/layout"
+	"github.com/philipp-mlr/al-id-maestro/internal/chart"
+	)
+
+templ Show(currPage map[string]bool) {
+	@layout.Base(currPage, "AL ID Maestro - Dashboard") {
+			<div class="flex flex-col px-20">
+				<h1 class="my-20 text-4xl">Dashboard</h1>
+					
+				// <div class="flex flex-col justify-center w-64 rounded-lg bg-base-200">
+				// 	<h2 class="mb-10 text-base-content">Free Objects</h2>
+
+				// 	<div>
+				// 		@statItem("Tables", "500")
+				// 		@statItem("Tables", "50000")
+				// 		@statItem("Tables", "50")
+				// 		@statItem("Tables", "5")
+				// 		@statItem("Tables", "5000")
+				// 		@statItem("Tables", "500")
+				// 	</div>
+				// </div>
+
+				<div class="bg-base-100">
+					<div class="mx-auto max-w-7xl">
+						<div class="grid grid-cols-1 gap-px bg-white/5 sm:grid-cols-2 lg:grid-cols-4">
+							<div class="px-4 py-6 bg-base-200 sm:px-6 lg:px-8">
+								<p class="font-medium text-gray-400 text-sm/6">Repositorys tracked</p>
+								<p class="flex items-baseline mt-2 gap-x-2">
+								<span class="text-4xl font-semibold tracking-tight text-white">2</span>
+								</p>
+							</div>
+							<div class="px-4 py-6 bg-base-200 sm:px-6 lg:px-8">
+								<p class="font-medium text-gray-400 text-sm/6">Branches scanned</p>
+								<p class="flex items-baseline mt-2 gap-x-2">
+								<span class="text-4xl font-semibold tracking-tight text-white">43</span>
+								</p>
+							</div>
+							<a class="px-4 py-6 bg-base-200 sm:px-6 lg:px-8" href="/history">
+								<p class="font-medium text-gray-400 text-sm/6">Claimed IDs</p>
+								<p class="flex items-baseline mt-2 gap-x-2">
+								<span class="text-4xl font-semibold tracking-tight text-white link link-hover hover:text-primary">405</span>
+								</p>
+							</a>
+							<a class="px-4 py-6 bg-base-200 sm:px-6 lg:px-8" href="/used">
+								<p class="font-medium text-gray-400 text-sm/6">Objects discovered</p>
+								<p class="flex items-baseline mt-2 gap-x-2">
+								<span class="text-4xl font-semibold tracking-tight text-white link link-hover hover:text-primary">2700</span>
+								</p>
+							</a>
+						</div>
+					</div>
+				</div>
+
+				<div class="mt-10">
+					<canvas id="claimChart"></canvas>
+				</div>	
+			</div>
+			
+			<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+			<script>
+				
+			</script>
+
+			<div hx-trigger="load" hx-get="/chart" hx-target="this" hx-swap="outerHTML"></div>
+		}
+}
+
+templ Chart(data []chart.ChartDataPoint) {
+	<div id="chart-data" chart-data={ templ.JSONString(data) }></div>
+
+	<script>
+		
+		var ctx = document.getElementById('claimChart');
+		var chartDataElem = document.getElementById('chart-data');
+		var data = JSON.parse(chartDataElem.getAttribute('chart-data'));
+		var dates = data.map(item => item.Date);
+		var values = data.map(item => item.Value);
+
+		chart = new Chart(ctx, {
+			type: 'line',
+			data: {
+			labels: dates,
+			datasets: [{
+				label: 'Objects Claimed',
+				data: values,
+				fill: true,
+				borderColor: 'rgb(75, 192, 192)',
+				tension: 0.1
+			}]
+			},
+			options: {
+			scales: {
+				y: {
+					beginAtZero: true,
+					ticks: {
+                            // callback: function (value) {
+                            //     // Skipping decimal points
+                            //     return Math.floor(value);
+                            // }
+							stepSize: 1
+                        }
+				}
+			}
+			}
+		});
+
+	</script>
+}
+
+templ statItem(title string, value string) {
+	<div class="flex items-end justify-center">
+		<div class="text-2xl text-white min-w-24">{value}</div>
+		<div>{title}</div>
+	</div>
+}
