@@ -78,6 +78,7 @@ func initHttpServer(db *sqlx.DB, allowedList *model.LicensedObjectList, repoInfo
 		DB: db,
 	}
 	e.GET("/", indexHandler.HandleIndexShow)
+	e.GET("/chart", indexHandler.HandleChartShow)
 
 	claimHandler := handler.ClaimHandler{
 		DB:          db,
@@ -92,7 +93,8 @@ func initHttpServer(db *sqlx.DB, allowedList *model.LicensedObjectList, repoInfo
 	e.POST("/history", historyHandler.HandlePostQuery)
 
 	duplicatesHandler := handler.DuplicatesHandler{
-		DB: db,
+		DB:              db,
+		RepoInformation: repoInformation,
 	}
 	e.GET("/duplicates", duplicatesHandler.HandleDuplicatesShow)
 

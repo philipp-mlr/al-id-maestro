@@ -3,7 +3,7 @@ package config
 import (
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
-	"github.com/philipp-mlr/al-id-maestro/internal/model"
+	"github.com/philipp-mlr/al-id-maestro/internal/objectType"
 )
 
 type Config struct {
@@ -22,7 +22,7 @@ type RemoteConfiguration struct {
 }
 
 type ConfigIDRange struct {
-	ObjectType model.ObjectType `yaml:"objectType"`
-	StartID    uint             `yaml:"from"`
-	EndID      uint             `yaml:"to"`
+	ObjectType objectType.Type `yaml:"objectType"`
+	StartID    uint            `yaml:"from"`
+	EndID      uint            `yaml:"to"`
 }

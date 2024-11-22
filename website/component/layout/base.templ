@@ -18,20 +18,20 @@ templ Base(currPage map[string]bool, title string) {
 				<!-- Sidebar component, swap this element with another sidebar if you like -->
 				<div class="flex flex-col px-6 pb-4 overflow-y-auto bg-base-200 grow gap-y-5">
 					<div class="flex flex-col items-center h-32 mt-10 mb-20 space-y-2 shrink-0">
-						<a href="/" class="transition ease-in-out hover:duration-150">
-							<img class="w-auto h-40 mx-auto rounded-full" src="/static/img/logo.png" alt="Logo"/>
+						<a href="/" class="transition ease-in-out hover:duration-150 hover:text-white">
+							<img class="w-auto mx-auto rounded-full h-36" src="/static/img/logo.png" alt="Logo"/>
+							<h1 class="mx-5 mt-1 text-2xl text-base-contet ">AL ID Maestro</h1>
 						</a>
-						<h1 class="mx-5 mt-5 text-3xl font-bold text-white">AL ID Maestro</h1>
 					</div>
 
-					<a href="/claim" class="inline-flex items-center w-2/3 mx-auto mt-8 text-xl btn btn-outline btn-primary btn-lg">
+					<a hx-boost="true" href="/claim" class="inline-flex items-center w-2/3 mx-auto my-8 text-xl btn btn-outline btn-primary btn-lg">
 						<svg class="w-6 h-6 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"></path>
 						</svg>
 						Claim ID
 					</a>
 					
-					<nav class="flex flex-col flex-1 mt-8" hx-boost="true">
+					<nav class="flex flex-col flex-1" hx-boost="true">
 						<ul role="list" class="flex flex-col flex-1 gap-y-7">
 							<li>
 								<ul role="list" class="-mx-2 space-y-1">

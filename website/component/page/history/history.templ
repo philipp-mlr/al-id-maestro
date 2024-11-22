@@ -9,24 +9,24 @@ import (
 templ Show(currPage map[string]bool) {
 	@layout.Base(currPage, "AL ID Maestro - Claim History") {
 		<div class="px-20">
-			<h1 class="my-20 text-4xl">Claim History</h1>
-
+			<div class="my-20">
+				<h1 class="text-4xl">Claimed IDs</h1>
+			</div>
 			// <div class="flex items-end gap-x-3" hx-post="/history" hx-trigger="change from:select, keyup from:input delay:200ms" hx-target="#table-items" hx-ext="json-enc" hx-include="this">
 			// 	<label class="w-full max-w-36 form-control">
 			// 		<div class="label">
 			// 			<span class="label-text">Filter</span>
 			// 		</div>
 			// 		<select name="filter" id="filter-select" class="select select-bordered">
-			// 			<option>ID</option>
-			// 			<option>Type</option>
-			// 			<option>Expired</option>
-			// 			<option>In Git</option>
-			// 			<option>Created At</option>
+			// 			<option value="id">ID</option>
+			// 			<option value="type">Type</option>
+			// 			<option value="expired">Expired</option>
+			// 			<option value="in_git">In Git</option>
+			// 			<option value="created_at">Created At</option>
 			// 		</select>
 			// 	</label>
 			// 	<input name="query" type="text" placeholder="Type here" class="w-full max-w-xs input input-bordered" />
 			// </div>
-
 			<div class="mt-5 overflow-x-auto" hx-trigger="load" hx-get="/history?page=1" hx-target="#table-items" hx-trigger="once">
 				<table class="table table-sm md:table-md xl:table-lg table-zebra">
 					<!-- head -->
@@ -35,6 +35,7 @@ templ Show(currPage map[string]bool) {
 							<th>ID</th>
 							<th>Type</th>
 							<th>Status</th>
+							<th>Source</th>
 							<th>Created At</th>
 						</tr>
 					</thead>
@@ -47,13 +48,14 @@ templ Show(currPage map[string]bool) {
 }
 
 templ TableItem(claimed []model.ClaimedObject, nextPage uint64) {
-	for i, object := range claimed {
+	for i, c := range claimed {
 		if len(claimed) -1 != i {
 			<tr>
-				<td>{ fmt.Sprint(object.ID) }</td>
-				<td>{ fmt.Sprint(object.ObjectType) }</td>
-				<td> @tableItemBadges(object.Expired, object.InGit) </td>
-				<td>{ fmt.Sprint(object.CreatedAt) }</td>
+				<td>{ fmt.Sprint(c.ID) }</td>
+				<td>{ fmt.Sprint(c.ObjectType) }</td>
+				<td class="flex gap-x-1"> @tableItemBadges(c.Expired, c.InGit)</td>
+				<td><div class="badge badge-neutral">{ string(c.Source)}</div></td>
+				<td>{ fmt.Sprint(c.CreatedAt) }</td>
 			</tr>
 		} else {
 			<tr
@@ -62,10 +64,11 @@ templ TableItem(claimed []model.ClaimedObject, nextPage uint64) {
 				hx-swap="afterend show:none"
 				hx-target="this"
 			>
-				<td>{ fmt.Sprint(object.ID) }</td>
-				<td>{ fmt.Sprint(object.ObjectType) }</td>
-				<td> @tableItemBadges(object.Expired, object.InGit) </td>
-				<td>{ fmt.Sprint(object.CreatedAt) }</td>
+				<td>{ fmt.Sprint(c.ID) }</td>
+				<td>{ fmt.Sprint(c.ObjectType) }</td>
+				<td class="flex gap-x-1"> @tableItemBadges(c.Expired, c.InGit) </td>
+				<td><div class="badge badge-neutral">{ string(c.Source)}</div></td>
+				<td>{ fmt.Sprint(c.CreatedAt) }</td>
 			</tr>
 		}
 	}
@@ -79,6 +82,6 @@ templ tableItemBadges(expired bool, inGit bool) {
 		<div class="badge badge-success">found in Git</div>
 	}
 	if !expired && !inGit {
-		<div class="badge badge-neutral">to be committed</div>
+		<div class="badge badge-info">to be committed</div>
 	}
 }

@@ -8,11 +8,12 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/philipp-mlr/al-id-maestro/internal/database"
 	"github.com/philipp-mlr/al-id-maestro/internal/model"
+	"github.com/philipp-mlr/al-id-maestro/internal/objectType"
 )
 
 var claimLock sync.Mutex
 
-func ClaimObjectID(db *sqlx.DB, allowedList *model.LicensedObjectList, objectType model.ObjectType) (*model.ClaimedObject, error) {
+func ClaimObjectID(db *sqlx.DB, allowedList *model.LicensedObjectList, objectType objectType.Type, source model.Source) (*model.ClaimedObject, error) {
 	claimLock.Lock()
 	defer claimLock.Unlock()
 
@@ -60,7 +61,7 @@ func ClaimObjectID(db *sqlx.DB, allowedList *model.LicensedObjectList, objectTyp
 
 	for _, allowedObject := range objectTypeAllowedList {
 		if !allowedObject.Used {
-			c := model.NewClaimedObject(allowedObject.ID, allowedObject.ObjectType)
+			c := model.NewClaimedObject(allowedObject.ID, allowedObject.ObjectType, source)
 
 			err = database.InsertClaimedObject(db, *c)
 			if err != nil {

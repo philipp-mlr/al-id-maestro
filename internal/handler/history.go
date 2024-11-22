@@ -44,5 +44,5 @@ func (h *HistoryHandler) HandleHistoryShow(c echo.Context) error {
 func (h *HistoryHandler) HandlePostQuery(c echo.Context) error {
 	fmt.Println("HandlePostQuery")
 
-	return nil
+	return nil //Render(c, history.TableItem(InitActivePage(c)))
 }

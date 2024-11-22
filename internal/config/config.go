@@ -8,7 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/philipp-mlr/al-id-maestro/config"
 	"github.com/philipp-mlr/al-id-maestro/internal/database"
-	"github.com/philipp-mlr/al-id-maestro/internal/model"
+	"github.com/philipp-mlr/al-id-maestro/internal/objectType"
 	"gopkg.in/yaml.v3"
 )
 
@@ -55,12 +55,12 @@ func NewConfig(db *sqlx.DB) (*config.Config, error) {
 }
 
 func validateIDRanges(idRangeConfig *[]config.ConfigIDRange) error {
-	if len(*idRangeConfig) != len(model.GetObjectTypes()) {
-		return fmt.Errorf("error: object type %s is not configured", model.GetObjectTypes())
+	if len(*idRangeConfig) != len(objectType.GetObjectTypes()) {
+		return fmt.Errorf("error: object type %s is not configured", objectType.GetObjectTypes())
 	}
 
 	for i, c := range *idRangeConfig {
-		(*idRangeConfig)[i].ObjectType = model.MapObjectType(string(c.ObjectType))
+		(*idRangeConfig)[i].ObjectType = objectType.MapObjectType(string(c.ObjectType))
 
 		if c.ObjectType == "" {
 			return fmt.Errorf("error: configuration invalid object type %v", c.ObjectType)

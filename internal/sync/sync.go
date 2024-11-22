@@ -15,7 +15,10 @@ import (
 	"github.com/philipp-mlr/al-id-maestro/internal/database"
 	"github.com/philipp-mlr/al-id-maestro/internal/git"
 	"github.com/philipp-mlr/al-id-maestro/internal/model"
+	"github.com/philipp-mlr/al-id-maestro/internal/objectType"
 )
+
+const ObjectRegex string = `^(\w+) (\d{1,6}) "?"?([^"]*)?"?`
 
 func Sync(db *sqlx.DB, config *config.Config) error {
 	for _, config := range config.RemoteConfiguration {
@@ -155,7 +158,7 @@ func scanAndInsertRepositoryFiles(db *sqlx.DB, config *config.RemoteConfiguratio
 	}
 
 	for _, f := range found {
-		err = database.InsertFoundObject(db, f)
+		err = database.InsertDiscoveredObject(db, f)
 		if err != nil {
 			return fmt.Errorf("error inserting found object: %s %v", err, f)
 		}
@@ -168,8 +171,8 @@ func scanAndInsertRepositoryFiles(db *sqlx.DB, config *config.RemoteConfiguratio
 	return nil
 }
 
-func findMatches(lines *[]string, file string) (model.ObjectType, string, int, error) {
-	pattern := regexp.MustCompile(`^(\w+) (\d{1,6}) "?"?([^"]*)?"?`)
+func findMatches(lines *[]string, file string) (objectType.Type, string, int, error) {
+	pattern := regexp.MustCompile(ObjectRegex)
 
 	for _, line := range *lines {
 		matches := pattern.FindStringSubmatch(line)
@@ -177,24 +180,24 @@ func findMatches(lines *[]string, file string) (model.ObjectType, string, int, e
 		if len(matches) == 4 {
 			// matches[0] is the full match, matches[1], matches[2], matches[3] are the capture groups
 
-			objectType := model.MapObjectType(matches[1])
-			if objectType == model.Unknown {
-				return model.Unknown, "", 0, fmt.Errorf("unknown object type %s for file %s", matches[1], file)
+			t := objectType.MapObjectType(matches[1])
+			if t == objectType.Unknown {
+				return objectType.Unknown, "", 0, fmt.Errorf("unknown object type %s for file %s", matches[1], file)
 			}
 
 			id, err := strconv.Atoi(matches[2])
 			if err != nil {
-				return model.Unknown, "", 0, fmt.Errorf("failed converting the object Id to type int for file %s", file)
+				return objectType.Unknown, "", 0, fmt.Errorf("failed converting the object Id to type int for file %s", file)
 			}
 
 			objectName := matches[3]
 			if objectName == "" {
-				return model.Unknown, "", 0, fmt.Errorf("object name is empty for file %s", file)
+				return objectType.Unknown, "", 0, fmt.Errorf("object name is empty for file %s", file)
 			}
 
-			return objectType, objectName, id, nil
+			return t, objectName, id, nil
 		}
 	}
 
-	return model.Unknown, "", 0, fmt.Errorf("no object definition found in file %s", file)
+	return objectType.Unknown, "", 0, fmt.Errorf("no object definition found in file %s", file)
 }

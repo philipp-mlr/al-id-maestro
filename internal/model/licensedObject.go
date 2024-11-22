@@ -1,10 +1,14 @@
 package model
 
-import "sort"
+import (
+	"sort"
+
+	"github.com/philipp-mlr/al-id-maestro/internal/objectType"
+)
 
 type LicensedObject struct {
 	ID         uint
-	ObjectType ObjectType
+	ObjectType objectType.Type
 	Used       bool
 }
 
@@ -29,7 +33,7 @@ func (list *LicensedObjectList) Sort() {
 	sort.Sort(list)
 }
 
-func (list *LicensedObjectList) BinarySearch(targetID uint, targetType ObjectType) int {
+func (list *LicensedObjectList) BinarySearch(targetID uint, targetType objectType.Type) int {
 	low, high := 0, len(*list)-1
 
 	for low <= high {
@@ -53,7 +57,7 @@ func (list *LicensedObjectList) BinarySearch(targetID uint, targetType ObjectTyp
 	return -1 // Not found
 }
 
-func (list *LicensedObjectList) Filter(objectType ObjectType) LicensedObjectList {
+func (list *LicensedObjectList) Filter(objectType objectType.Type) LicensedObjectList {
 	filteredList := LicensedObjectList{}
 
 	for _, a := range *list {

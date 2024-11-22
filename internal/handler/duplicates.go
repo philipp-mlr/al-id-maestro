@@ -10,7 +10,8 @@ import (
 )
 
 type DuplicatesHandler struct {
-	DB *sqlx.DB
+	DB              *sqlx.DB
+	RepoInformation map[string]string
 }
 
 func (h *DuplicatesHandler) HandleDuplicatesShow(c echo.Context) error {
@@ -27,7 +28,7 @@ func (h *DuplicatesHandler) HandleDuplicatesShow(c echo.Context) error {
 			return err
 		}
 
-		return Render(c, duplicates.TableItem(duplicatedObjects, uint64(page+1)))
+		return Render(c, duplicates.TableItem(duplicatedObjects, uint64(page+1), h.RepoInformation))
 	}
 
 	return Render(c, duplicates.Show(InitActivePage(c)))

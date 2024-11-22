@@ -2,7 +2,7 @@ package claim
 
 import (
 	"github.com/philipp-mlr/al-id-maestro/website/component/layout"
-	"github.com/philipp-mlr/al-id-maestro/internal/model"
+	"github.com/philipp-mlr/al-id-maestro/internal/objectType"
 )
 
 templ Show(currPage map[string]bool) {
@@ -102,7 +102,7 @@ templ ClaimedID(id string) {
 	</div>
 }
 
-templ QueryResults(results []model.ObjectType) {
+templ QueryResults(results []objectType.Type) {
 	for _, r := range results {
 		<li ><a tabindex="0" onclick="setInputValue(this)" onkeydown="setInputValueOnEnter(this)">{ string(r) }</a></li>
 	}

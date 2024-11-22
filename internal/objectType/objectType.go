@@ -1,28 +1,28 @@
-package model
+package objectType
 
 import "strings"
 
-type ObjectType string
+type Type string
 
 const (
-	Table                  ObjectType = "Table"
-	TableExtention         ObjectType = "TableExtension"
-	Page                   ObjectType = "Page"
-	PageExtention          ObjectType = "PageExtension"
-	Report                 ObjectType = "Report"
-	ReportExtention        ObjectType = "ReportExtension"
-	Enum                   ObjectType = "Enum"
-	EnumExtention          ObjectType = "EnumExtension"
-	PermissionSet          ObjectType = "PermissionSet"
-	PermisisonSetExtention ObjectType = "PermissionSetExtension"
-	Codeunit               ObjectType = "Codeunit"
-	XMLPort                ObjectType = "XMLPort"
-	Query                  ObjectType = "Query"
-	MenuSuite              ObjectType = "MenuSuite"
-	Unknown                ObjectType = "Unknown"
+	Table                  Type = "Table"
+	TableExtention         Type = "TableExtension"
+	Page                   Type = "Page"
+	PageExtention          Type = "PageExtension"
+	Report                 Type = "Report"
+	ReportExtention        Type = "ReportExtension"
+	Enum                   Type = "Enum"
+	EnumExtention          Type = "EnumExtension"
+	PermissionSet          Type = "PermissionSet"
+	PermisisonSetExtention Type = "PermissionSetExtension"
+	Codeunit               Type = "Codeunit"
+	XMLPort                Type = "XMLPort"
+	Query                  Type = "Query"
+	MenuSuite              Type = "MenuSuite"
+	Unknown                Type = "Unknown"
 )
 
-func MapObjectType(objectType string) ObjectType {
+func MapObjectType(objectType string) Type {
 	switch strings.ToLower(objectType) {
 	case strings.ToLower(string(Table)):
 		return Table
@@ -57,8 +57,8 @@ func MapObjectType(objectType string) ObjectType {
 	}
 }
 
-func GetObjectTypes() []ObjectType {
-	return []ObjectType{
+func GetObjectTypes() []Type {
+	return []Type{
 		Table,
 		TableExtention,
 		Page,

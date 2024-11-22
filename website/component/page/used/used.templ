@@ -31,9 +31,9 @@ templ Show(currPage map[string]bool) {
 		</main>	}
 }
 
-templ TableItem(found []model.DiscoveredObject, nextPage uint64, repoInformation map[string]string) {
-	for i, object := range found {
-		if len(found) -1 != i {
+templ TableItem(discovered []model.DiscoveredObject, nextPage uint64, repoInformation map[string]string) {
+	for i, object := range discovered {
+		if len(discovered) -1 != i {
 			<tr>
 				<td>{ fmt.Sprint(object.ID) }</td>
 				<td>{ fmt.Sprint(object.ObjectType) }</td>

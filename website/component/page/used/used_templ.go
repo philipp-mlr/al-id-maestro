@@ -61,7 +61,7 @@ func Show(currPage map[string]bool) templ.Component {
 	})
 }
 
-func TableItem(found []model.DiscoveredObject, nextPage uint64, repoInformation map[string]string) templ.Component {
+func TableItem(discovered []model.DiscoveredObject, nextPage uint64, repoInformation map[string]string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -82,8 +82,8 @@ func TableItem(found []model.DiscoveredObject, nextPage uint64, repoInformation 
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		for i, object := range found {
-			if len(found)-1 != i {
+		for i, object := range discovered {
+			if len(discovered)-1 != i {
 				templ_7745c5c3_Err = templ.WriteWatchModeString(templ_7745c5c3_Buffer, 2)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

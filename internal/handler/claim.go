@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/philipp-mlr/al-id-maestro/internal/claim"
 	"github.com/philipp-mlr/al-id-maestro/internal/model"
+	"github.com/philipp-mlr/al-id-maestro/internal/objectType"
 	claimPage "github.com/philipp-mlr/al-id-maestro/website/component/page/claim"
 )
 
@@ -19,7 +20,7 @@ type ClaimHandler struct {
 }
 
 type ClaimRequest struct {
-	ObjectType model.ObjectType `json:"query" validate:"required"`
+	ObjectType objectType.Type `json:"query" validate:"required"`
 }
 
 func (h ClaimHandler) HandlePageShow(c echo.Context) error {
@@ -39,8 +40,8 @@ func (h *ClaimHandler) HandleNewObjectClaim(c echo.Context) error {
 		return err
 	}
 
-	objectType := model.MapObjectType(string(claimRequest.ObjectType))
-	if objectType == model.Unknown {
+	t := objectType.MapObjectType(string(claimRequest.ObjectType))
+	if t == objectType.Unknown {
 		return echo.ErrBadRequest
 	}
 
@@ -49,7 +50,7 @@ func (h *ClaimHandler) HandleNewObjectClaim(c echo.Context) error {
 		return err
 	}
 
-	claimed, err := claim.ClaimObjectID(h.DB, h.AllowedList, objectType)
+	claimed, err := claim.ClaimObjectID(h.DB, h.AllowedList, t, model.GUI)
 	if err != nil {
 		log.Println(err)
 		return Render(c, claimPage.ClaimedID(err.Error()))
@@ -84,8 +85,8 @@ func (h *ClaimHandler) HandleNewObjectClaimAPI(c echo.Context) error {
 		})
 	}
 
-	objectType := model.MapObjectType(string(claimRequest.ObjectType))
-	if objectType == model.Unknown {
+	t := objectType.MapObjectType(string(claimRequest.ObjectType))
+	if t == objectType.Unknown {
 		return c.JSON(http.StatusInternalServerError, ObjectClaimAPIError{
 			Message: "Invalid object type",
 		})
@@ -98,7 +99,7 @@ func (h *ClaimHandler) HandleNewObjectClaimAPI(c echo.Context) error {
 		})
 	}
 
-	claimed, err := claim.ClaimObjectID(h.DB, h.AllowedList, objectType)
+	claimed, err := claim.ClaimObjectID(h.DB, h.AllowedList, t, model.API)
 	if err != nil {
 		log.Println(err)
 		return c.JSON(http.StatusInternalServerError, ObjectClaimAPIError{
@@ -113,7 +114,7 @@ func (h *ClaimHandler) HandleNewObjectClaimAPI(c echo.Context) error {
 }
 
 type ObjectTypeQuery struct {
-	ObjectType model.ObjectType `json:"query"`
+	ObjectType objectType.Type `json:"query"`
 }
 
 func (h ClaimHandler) HandleObjectTypeQuery(c echo.Context) error {
@@ -122,13 +123,13 @@ func (h ClaimHandler) HandleObjectTypeQuery(c echo.Context) error {
 		return err
 	}
 
-	objectTypes := model.GetObjectTypes()
+	objectTypes := objectType.GetObjectTypes()
 
 	if objectTypeQuery.ObjectType == "" {
 		return Render(c, claimPage.QueryResults(objectTypes))
 	}
 
-	results := []model.ObjectType{}
+	results := []objectType.Type{}
 	for _, objectType := range objectTypes {
 		if strings.Contains(strings.ToLower(string(objectType)), strings.ToLower(string(objectTypeQuery.ObjectType))) {
 			results = append(results, objectType)
