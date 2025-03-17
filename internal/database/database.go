@@ -191,6 +191,7 @@ func SelectClaimedObjects(db *sqlx.DB, offset uint64) ([]model.ClaimedObject, er
 	stmt := `
 		SELECT *
 			FROM claimed_object
+			ORDER BY created_at DESC
 			LIMIT 50 OFFSET 50 * ?
 	`
 
@@ -450,6 +451,21 @@ func GetClaimCountByDate(db *sqlx.DB, date string) (int, error) {
 
 	var count int
 	err := db.Get(&count, stmt, date)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
+}
+
+func SelectReposCount(db *sqlx.DB) (int, error) {
+	stmt := `
+		SELECT COUNT(DISTINCT repository)
+			FROM discovered_object
+	`
+
+	var count int
+	err := db.Get(&count, stmt)
 	if err != nil {
 		return 0, err
 	}

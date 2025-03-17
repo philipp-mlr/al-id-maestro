@@ -16,7 +16,6 @@ func GetChartData(db *sqlx.DB, days int) ([]ChartDataPoint, error) {
 	data := buildDataPointDateRange(days)
 
 	for i, d := range data {
-
 		querydate, err := parseQueryDate(d.Date)
 		if err != nil {
 			return nil, err
