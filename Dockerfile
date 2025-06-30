@@ -16,7 +16,7 @@ WORKDIR /tailwind
 COPY package*.json /tailwind
 RUN npm install
 COPY --from=templ-stage /templ /tailwind
-RUN npx tailwindcss -i ./input.css -o ./public/css/style.css --minify
+RUN npx tailwindcss -i ./input.css -o ./website/public/css/style.css --minify
 
 # Go build
 FROM --platform=$BUILDPLATFORM golang:alpine AS build-stage
@@ -33,7 +33,7 @@ WORKDIR /app
 RUN if [ "${TARGETARCH}" = "arm64" ]; then \
   export CC=/usr/local/aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc; \
   fi && \
-  CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /app/main -buildvcs=false
+  CGO_ENABLED=1 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /app/main -buildvcs=false ./cmd
 
 # Go test
 FROM build-stage AS test-stage
@@ -43,12 +43,13 @@ RUN go test -v ./...
 FROM alpine:latest AS deploy-stage
 WORKDIR /app
 RUN addgroup --system --gid 5000 app && adduser --system --no-create-home --uid 5000 app --ingroup app
-COPY --chown=app:app --from=build-stage /app/public /app/public
-COPY --chown=app:app --from=build-stage /app/main /app/main
+COPY --chown=app:app --from=build-stage /app/website/public /app/website/public
+COPY --chown=app:app --from=build-stage /app/main /app/cmd/main
+RUN ls -al ./cmd
 USER app
 ENV CLONE_IN_MEMORY=true
 EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10m \
   CMD wget --no-verbose --tries=1 --spider http://localhost:5000/ || exit 1
 RUN ls -al
-CMD ["./main"]
+CMD ["./cmd/main"]
