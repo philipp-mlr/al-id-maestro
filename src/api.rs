@@ -1,23 +1,52 @@
+use std::str::FromStr;
 
-pub async fn new_object(
-    Path(object_type): Path<String>,
-    headers: HeaderMap,
-) -> Result<String, StatusCode> {
-    let api_key = headers.get("X-API-KEY");
+use axum::{
+    extract::Path,
+    http::{HeaderMap, StatusCode},
+};
 
-    match api_key {
-        Some(_v) => println!("yes"),
-        None => return Err(StatusCode::UNAUTHORIZED),
-    };
+use crate::{
+    object_manager::{self, ObjectManager},
+    object_type::ObjectType,
+};
 
-    let type_result = Type::from_str(object_type.as_str());
+struct Api {
+    object_manager: ObjectManager,
+}
 
-    let result = match type_result {
-        Ok(v) => result,
-        Err(e) => eprintln!("Received incorrect object type: {:?}", e);
-
+impl Api {
+    pub fn new(object_manager: ObjectManager) -> Api {
+        Api {
+            object_manager: object_manager,
+        }
     }
 
-    println!("{}", object_type);
-    Ok("420".to_string())
+    pub async fn new_object(
+        &mut self,
+        Path(object_type): Path<String>,
+        headers: HeaderMap,
+    ) -> Result<String, StatusCode> {
+        let api_key = headers.get("X-API-KEY");
+
+        match api_key {
+            Some(_v) => println!("yes"),
+            None => return Err(StatusCode::UNAUTHORIZED),
+        };
+
+        let object_type = match ObjectType::from_str(object_type.as_str()) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Received incorrect object type: {:?}", e);
+                ObjectType::None
+            }
+        };
+
+        if object_type == ObjectType::None {
+            return Err(StatusCode::BAD_REQUEST);
+        }
+
+        self.object_manager.get_free_id_for_type(object_type);
+
+        Ok("420".to_string())
+    }
 }

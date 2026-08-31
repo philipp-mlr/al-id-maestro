@@ -1,5 +1,11 @@
+use std::{
+    fmt::{self, Display},
+    str::FromStr,
+};
+
 #[derive(Debug, Hash, Eq, PartialEq)]
 pub enum ObjectType {
+    None,
     Codeunit,
     Table,
     TableExtension,
@@ -15,8 +21,6 @@ pub enum ObjectType {
     Query,
     XMLPort,
 }
-
-use std::str::FromStr;
 
 impl FromStr for ObjectType {
     type Err = String;
@@ -39,5 +43,31 @@ impl FromStr for ObjectType {
             "XMLPort" => Ok(ObjectType::XMLPort),
             _ => Err("unknown object type".to_string()),
         }
+    }
+}
+
+impl Display for ObjectType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                ObjectType::None => "None",
+                ObjectType::Codeunit => "Codeunit",
+                ObjectType::Table => "Table",
+                ObjectType::TableExtension => "TableExtension",
+                ObjectType::Page => "Page",
+                ObjectType::PageExtension => "PageExtension",
+                ObjectType::Report => "Report",
+                ObjectType::ReportExtension => "ReportExtension",
+                ObjectType::Enum => "Enum",
+                ObjectType::EnumExtension => "EnumExtension",
+                ObjectType::PermissionSet => "PermissionSet",
+                ObjectType::PermissionSetExtension => "PermissionSetExtension",
+                ObjectType::MenuSuite => "MenuSuite",
+                ObjectType::Query => "Query",
+                ObjectType::XMLPort => "XMLPort",
+            }
+        )
     }
 }

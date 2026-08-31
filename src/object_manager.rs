@@ -13,24 +13,29 @@
 // }
 //
 
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    collections::{BTreeMap, HashMap, hash_map},
+    hash::Hash,
+};
 
-use crate::object_type::ObjectType;
+use crate::{
+    id_state::IDState,
+    object_type::{self, ObjectType},
+    utilized_object_provider::UtilizedObjectProvider,
+};
 
 pub struct ObjectManager {
-    object_ranges: HashMap<ObjectType, BTreeMap<u32, bool>>,
+    id_tree: IDTree,
 }
 
 impl ObjectManager {
-    pub fn get_free_id(&self, object_type: ObjectType) -> Result<u32, String> {
-        let range = self.object_ranges.get(&object_type).unwrap();
-
-        for (i, b) in range.iter() {
-            if !*b {
-                return Ok(*i);
-            }
+    pub fn new(range_provider: impl UtilizedObjectProvider) -> ObjectManager {
+        ObjectManager {
+            id_tree: range_provider.generate_id_tree(),
         }
+    }
 
-        Err("No free id".to_string())
+    pub fn get_free_id_for_type(&mut self, object_type: ObjectType) -> Result<u32, String> {
+        self.id_tree.request_id(object_type)
     }
 }

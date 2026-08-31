@@ -1,7 +1,29 @@
+use crate::{
+    object_manager::ObjectManager, object_type::ObjectType,
+    utilized_object_provider::mock::MockUtilizedObjectProvider,
+};
+
+mod api;
+mod id_state;
+mod id_tree;
 mod object_manager;
 mod object_type;
+mod utilized_object_provider;
 
-fn main() {}
+fn main() {
+    let mut object_manager = ObjectManager::new(MockUtilizedObjectProvider);
+    new(&mut object_manager);
+    new(&mut object_manager);
+    new(&mut object_manager);
+    new(&mut object_manager);
+}
+
+fn new(object_manager: &mut ObjectManager) {
+    match object_manager.get_free_id_for_type(object_type::ObjectType::Codeunit) {
+        Ok(i) => println!("got id {} for object {}", i, ObjectType::Codeunit),
+        Err(e) => eprintln!("{}", e),
+    }
+}
 
 // use axum::{
 //     Router,
@@ -41,19 +63,7 @@ fn main() {}
 //     run().await;
 // }
 //
-// fn initalize_id_range(start: u32, end: u32) -> BTreeMap<u32, bool> {
-//     let mut id_range: BTreeMap<u32, bool> = BTreeMap::new();
-//     for i in start..end + 1 {
-//         id_range.insert(i, false);
-//     }
-//     id_range
-// }
 //
-// fn print_range(id_range: &BTreeMap<u32, bool>) {
-//     for (key, value) in id_range {
-//         println!("{key} {value}");
-//     }
-// }
 //
 // async fn run() {
 //     let app = Router::new().route("/new/{object_type}", get(new_object));
