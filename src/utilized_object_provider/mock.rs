@@ -1,11 +1,11 @@
 use std::collections::{BTreeMap, HashMap};
 
-use crate::{id_state::IDState, object_manager::IDTree, object_type::ObjectType};
+use crate::{id_state::IDState, object_tree::ObjectTree, object_type::ObjectType};
 
 pub struct MockUtilizedObjectProvider;
 
 impl super::UtilizedObjectProvider for MockUtilizedObjectProvider {
-    fn generate_id_tree(&self) -> IDTree {
+    fn generate_id_tree(&self) -> ObjectTree {
         let start = 50000u32;
         let end = 99999u32;
 
@@ -16,6 +16,6 @@ impl super::UtilizedObjectProvider for MockUtilizedObjectProvider {
 
         let mut map = HashMap::new();
         map.insert(ObjectType::Codeunit, id_range);
-        IDTree::new(map)
+        ObjectTree::new(map)
     }
 }

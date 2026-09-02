@@ -1,31 +1,10 @@
-// use thiserror::Error;
-//
-// #[derive(Debug, Error)]
-// pub enum Error {
-//     #[error("item not found")]
-//     NotFound,
-//     #[error("item already exists")]
-//     AlreadyExists,
-//     #[error("invalid input: {0}")]
-//     InvalidInput(String),
-//     #[error(transparent)]
-//     Io(#[from] std::io::Error),
-// }
-//
-
-use std::{
-    collections::{BTreeMap, HashMap, hash_map},
-    hash::Hash,
-};
-
 use crate::{
-    id_state::IDState,
-    object_type::{self, ObjectType},
+    object_tree::ObjectTree, object_type::ObjectType,
     utilized_object_provider::UtilizedObjectProvider,
 };
 
 pub struct ObjectManager {
-    id_tree: IDTree,
+    id_tree: ObjectTree,
 }
 
 impl ObjectManager {

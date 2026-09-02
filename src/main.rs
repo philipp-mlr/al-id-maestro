@@ -3,10 +3,9 @@ use crate::{
     utilized_object_provider::mock::MockUtilizedObjectProvider,
 };
 
-mod api;
 mod id_state;
-mod id_tree;
 mod object_manager;
+mod object_tree;
 mod object_type;
 mod utilized_object_provider;
 

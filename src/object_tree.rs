@@ -2,13 +2,13 @@ use std::collections::{BTreeMap, HashMap};
 
 use crate::{id_state::IDState, object_type::ObjectType};
 
-pub struct IDTree {
+pub struct ObjectTree {
     ids: HashMap<ObjectType, BTreeMap<u32, IDState>>,
 }
 
-impl IDTree {
-    pub fn new(map: HashMap<ObjectType, BTreeMap<u32, IDState>>) -> IDTree {
-        IDTree { ids: map }
+impl ObjectTree {
+    pub fn new(map: HashMap<ObjectType, BTreeMap<u32, IDState>>) -> ObjectTree {
+        ObjectTree { ids: map }
     }
 
     pub fn request_id(&mut self, object_type: ObjectType) -> Result<u32, String> {
