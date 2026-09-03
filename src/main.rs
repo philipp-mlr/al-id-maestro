@@ -1,6 +1,7 @@
 use crate::{
-    object_manager::ObjectManager, object_type::ObjectType,
-    utilized_object_provider::mock::MockUtilizedObjectProvider,
+    object_manager::ObjectManager,
+    object_type::ObjectType,
+    utilized_object_provider::{git::GitUtilizedObjectProvider, mock::MockUtilizedObjectProvider},
 };
 
 mod id_state;
@@ -10,7 +11,7 @@ mod object_type;
 mod utilized_object_provider;
 
 fn main() {
-    let mut object_manager = ObjectManager::new(MockUtilizedObjectProvider);
+    let mut object_manager = ObjectManager::new(GitUtilizedObjectProvider);
     new(&mut object_manager);
     new(&mut object_manager);
     new(&mut object_manager);
