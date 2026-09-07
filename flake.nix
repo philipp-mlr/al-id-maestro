@@ -1,0 +1,75 @@
+{
+  description = "A Nix-flake-based Rust development environment";
+
+  inputs = {
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1"; # unstable Nixpkgs
+    fenix = {
+      url = "https://flakehub.com/f/nix-community/fenix/0.1";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = {self, ...} @ inputs: let
+    supportedSystems = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "aarch64-darwin"
+    ];
+    forEachSupportedSystem = f:
+      inputs.nixpkgs.lib.genAttrs supportedSystems (
+        system:
+          f {
+            inherit system;
+            pkgs = import inputs.nixpkgs {
+              inherit system;
+              overlays = [
+                inputs.self.overlays.default
+              ];
+            };
+            lib = inputs.nixpkgs.lib;
+          }
+      );
+  in {
+    overlays.default = final: prev: {
+      rustToolchain = with inputs.fenix.packages.${prev.stdenv.hostPlatform.system};
+        combine (
+          with stable; [
+            clippy
+            rustc
+            cargo
+            rustfmt
+            rust-src
+          ]
+        );
+    };
+
+    devShells = forEachSupportedSystem (
+      {
+        pkgs,
+        lib,
+        system,
+      }: {
+        default = pkgs.mkShell {
+          LD_LIBRARY_PATH = lib.makeLibraryPath [pkgs.openssl];
+          packages = with pkgs; [
+            rustToolchain
+            openssl
+            pkg-config
+            cargo-deny
+            cargo-edit
+            cargo-watch
+            self.formatter.${system}
+          ];
+
+          shellHook = ''
+            if [ -t 0 ]; then
+              exec fish
+            fi
+          '';
+        };
+      }
+    );
+
+    formatter = forEachSupportedSystem ({pkgs, ...}: pkgs.nixfmt);
+  };
+}
