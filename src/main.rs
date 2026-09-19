@@ -11,6 +11,8 @@ mod object_type;
 mod utilized_object_provider;
 
 fn main() {
+    dotenv::dotenv();
+
     let mut object_manager = ObjectManager::new(GitUtilizedObjectProvider);
     new(&mut object_manager);
     new(&mut object_manager);
